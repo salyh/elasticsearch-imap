@@ -16,7 +16,7 @@ Features:
 * Support indexing of attachments (in conjunction with https://github.com/elasticsearch/elasticsearch-mapper-attachments/)
 * Support for UTF-7 encoded e-mails (through jutf7)
 * SSL, STARTTLS and SASL are supported (through JavaMail API)
-* IMAP only: Folders which should be indexed can be speficied with a regex pattern
+* IMAP only: Folders which should be indexed can be specified with a regex pattern
 * IMAP only: Subfolders can also be indexed (whole traversal of all folders)
 * No special server capabilities needed
 * Bulk indexing
