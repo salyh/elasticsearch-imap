@@ -1,0 +1,15 @@
+{
+      type:"imap",
+      "mail.store.protocol":"pop3s",
+      "mail.pop3s.host":"127.0.0.1",
+      "mail.pop3s.port":3995,
+      "mail.pop3s.ssl.trust":"*",
+      "mail.debug":"false",
+      "mail.debug.auth":"false",
+      "user":"es_imapriver_unittest",
+      "password":"es_imapriver_unittest",
+      "interval":"3s",
+      "mail_index_name":"my_pop_river_index",
+      "mail_type_name":"my_pop_river_type",
+      "bulk_flush_interval":"1s"
+}
