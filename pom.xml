@@ -9,9 +9,7 @@
 	<packaging>jar</packaging>
 	<description>IMAP river for Elasticsearch</description>
 	<inceptionYear>2014</inceptionYear>
-
 	<url>https://github.com/salyh/elasticsearch-river-imap</url>
-
 
 	<licenses>
 		<license>
@@ -20,8 +18,9 @@
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
+
 	<properties>
-		<elasticsearch.version>1.1.0</elasticsearch.version>
+		<elasticsearch.version>1.1.1</elasticsearch.version>
 		<github.global.server>github</github.global.server>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
@@ -50,24 +49,12 @@
 
 	<distributionManagement>
 		<repository>
-			<id>bintray-salyh-elasticsearch-plugins-elasticsearch-river-imap</id>
-			<name>salyh-elasticsearch-plugins-elasticsearch-river-imap</name>
-			<url>https://api.bintray.com/maven/salyh/elasticsearch-plugins/elasticsearch-river-imap</url>
+			<id>bintray-salyh-maven-elasticsearch-river-imap</id>
+			<name>salyh-maven-elasticsearch-river-imap</name>
+			<url>https://api.bintray.com/maven/salyh/maven/elasticsearch-river-imap</url>
 		</repository>
 	</distributionManagement>
 
-	<repositories>
-		<repository>
-			<id>bintray-elasticsearch-plugins</id>
-			<url>http://dl.bintray.com/salyh/elasticsearch-plugins</url>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-	</repositories>
 
 	<dependencies>
 		<dependency>
@@ -97,13 +84,6 @@
 					<artifactId>mail</artifactId>
 				</exclusion>
 			</exclusions>
-		</dependency>
-
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.17</version>
-			<scope>test</scope>
 		</dependency>
 
 		<dependency>
@@ -177,12 +157,6 @@
 			<artifactId>quartz</artifactId>
 			<version>2.2.1</version>
 		</dependency>
-		<dependency>
-			<groupId>org.quartz-scheduler</groupId>
-			<artifactId>quartz-jobs</artifactId>
-			<version>2.2.1</version>
-		</dependency>
-
 	</dependencies>
 
 	<build>
@@ -391,7 +365,7 @@
 			<id>nonintegration</id>
 			<activation>
 				<file>
-				<missing>${basedir}/src/test/resources/priv-river-imap-strato.json</missing>
+					<missing>${basedir}/src/test/resources/priv-river-imap-strato.json</missing>
 				</file>
 			</activation>
 			<build>
