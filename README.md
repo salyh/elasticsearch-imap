@@ -24,25 +24,19 @@ Features:
 The river acts currently as a disconnected client. This means that the river is polling and for every indexing run a new server connections are opened and, after work is done, closed.
 At a later time is planned to use additionally the IMAP IDLE feature (if server supports it).
 
-<h3>Installation</h3> 
-(Until the first release is out you have to build this plugin yourself with maven or download from the github release page and install manually)
-
 Branches:
 * master for Elasticsearch 1.1.0 - 1.1.x
 
+<h3>Installation</h3> 
 Prerequisites:
 * Open JDK 6/7 or Oracle 7 JRE
 * Elasticsearch 1.1.0 or higher
 * At least one IMAP4 or POP3 server to connect to
 
-Build yourself:
-* Install maven
-* execute ``mvn clean package -DskipTests=true`` 
-
-``plugin.sh|bat -install river-imap -url http://...``
+``plugin.sh|.bat -i river-imap -u http://dl.bintray.com/salyh/maven/de/saly/elasticsearch/plugin/elasticsearch-river-imap/0.0.5/elasticsearch-river-imap-0.0.5-plugin.zip``
 
 <h3>Configuration</h3>
-<pre>curl -XPUT 'http://localhost:9200/_river/<name of your river>/_meta' -d '{
+<pre>curl -XPUT 'http://localhost:9200/_river/name of your river/_meta' -d '{
 
    "type":"imap",
    "mail.store.protocol":"imap",
@@ -65,7 +59,9 @@ Build yourself:
    "mail_type_name":"mail",
    "with_striptags_from_textcontent":true,
    "with_attachments":false,
-   "with_text_content":true
+   "with_text_content":true,
+   "index_settings" : null,
+   "type_mapping" : null
    
 }'</pre>
 
@@ -85,5 +81,22 @@ Build yourself:
 * ``with_striptags_from_textcontent`` - if ``true`` then html/xml tags are stripped from text content (default: ``true``)
 * ``with_attachments`` - if ``true`` then attachments will be indexed (default: ``false``)
 * ``with_text_content`` - if ``true`` then the text content of the mail is indexed (default: ``true``)
+* ``index_settings`` - optional settings for the Elasticsearch index
+* ``type_mapping`` - optional mapping for the Elasticsearch index type
 
 Note: For POP3 only the "INBOX" folder is supported. This is a limitation of the POP3 protocol.
+
+<h3>License</h3> 
+Copyright (C) 2014 by Hendrik Saly (http://saly.de) and others.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you
+may not use this file except in compliance with the License. You may
+obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing permissions
+and limitations under the License.
