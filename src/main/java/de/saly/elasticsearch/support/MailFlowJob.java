@@ -81,7 +81,6 @@ public class MailFlowJob implements InterruptableJob {
 
         mailSource = (MailSource) data.get("mailSource");
         pattern = (Pattern) data.get("pattern");
-     
 
         try {
             execute();
@@ -114,8 +113,6 @@ public class MailFlowJob implements InterruptableJob {
 
     }
 
-   
-
     public void setMailSource(final MailSource mailSource) {
         this.mailSource = mailSource;
     }
@@ -123,7 +120,5 @@ public class MailFlowJob implements InterruptableJob {
     public void setPattern(final Pattern pattern) {
         this.pattern = pattern;
     }
-
-    
 
 }

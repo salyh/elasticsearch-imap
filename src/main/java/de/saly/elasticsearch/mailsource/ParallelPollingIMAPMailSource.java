@@ -465,6 +465,7 @@ public class ParallelPollingIMAPMailSource implements MailSource {
             }*/
 
             if (pattern != null && !isRoot && !pattern.matcher(folder.getFullName()).matches()) {
+                logger.info(folder.getFullName() + " does not match pattern " + pattern.toString());
                 return;
             }
 
@@ -494,7 +495,7 @@ public class ParallelPollingIMAPMailSource implements MailSource {
             if ((folder.getType() & Folder.HOLDS_MESSAGES) != 0) {
 
                 if (pattern != null && !pattern.matcher(folder.getFullName()).matches()) {
-                    logger.trace("Pattern {} does not match {}", pattern.pattern(), folder.getFullName());
+                    logger.info("Pattern {} does not match {}", pattern.pattern(), folder.getFullName());
                     return;
                 }
                 IMAPUtils.open(folder);

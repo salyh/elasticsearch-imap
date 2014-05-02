@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import javax.mail.MessagingException;
 
@@ -132,9 +133,10 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
                 true);
 
         // get two maps from the river settings to improve index creation
-        final Map<String, Object> indexSettings = imapSettings.containsKey("index_settings") ? XContentMapValues.nodeMapValue(
+        final Map<String, Object> indexSettings = imapSettings.get("index_settings") != null ? XContentMapValues.nodeMapValue(
                 imapSettings.get("index_settings"), null) : null;
-        final Map<String, Object> typeMapping = imapSettings.containsKey("type_mapping") ? XContentMapValues.nodeMapValue(
+
+        final Map<String, Object> typeMapping = imapSettings.get("type_mapping") != null ? XContentMapValues.nodeMapValue(
                 imapSettings.get("type_mapping"), null) : null;
 
         for (final Map.Entry<String, Object> entry : imapSettings.entrySet()) {
@@ -216,7 +218,11 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
 
         logger.debug("once() start");
         final MailFlowJob mfj = new MailFlowJob();
-        mfj.setPattern(folderPattern == null ? null : Pattern.compile(folderPattern));
+        try {
+            mfj.setPattern(folderPattern == null ? null : Pattern.compile(folderPattern));
+        } catch (final PatternSyntaxException e) {
+            logger.error("folderpattern is invalid due to {}", e, e.toString());
+        }
         mfj.setMailSource(mailSource);
         mfj.execute();
         logger.debug("once() end");
@@ -242,8 +248,12 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
             final JobDataMap jdm = new JobDataMap();
             jdm.put("mailSource", mailSource);
 
-            if (folderPattern != null) {
-                jdm.put("pattern", Pattern.compile(folderPattern));
+            try {
+                if (folderPattern != null) {
+                    jdm.put("pattern", Pattern.compile(folderPattern));
+                }
+            } catch (final PatternSyntaxException e) {
+                logger.error("folderpattern is invalid due to {}", e, e.toString());
             }
 
             final JobDetail job = newJob(MailFlowJob.class).withIdentity(riverName + "-" + props.hashCode(), "group1").usingJobData(jdm)

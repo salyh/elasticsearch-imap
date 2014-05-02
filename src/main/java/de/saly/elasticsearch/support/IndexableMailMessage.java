@@ -308,6 +308,38 @@ public class IndexableMailMessage {
         return mapper.writeValueAsString(this);
     }
 
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final IndexableMailMessage other = (IndexableMailMessage) obj;
+        if (folderFullName == null) {
+            if (other.folderFullName != null) {
+                return false;
+            }
+        } else if (!folderFullName.equals(other.folderFullName)) {
+            return false;
+        }
+        if (popId == null) {
+            if (other.popId != null) {
+                return false;
+            }
+        } else if (!popId.equals(other.popId)) {
+            return false;
+        }
+        if (uid != other.uid) {
+            return false;
+        }
+        return true;
+    }
+
     public int getAttachmentCount() {
         return attachmentCount;
     }
@@ -380,46 +412,22 @@ public class IndexableMailMessage {
         return uid;
     }
 
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (folderFullName == null ? 0 : folderFullName.hashCode());
+        result = prime * result + (popId == null ? 0 : popId.hashCode());
+        result = prime * result + (int) (uid ^ uid >>> 32);
+        return result;
+    }
+
     public void setAttachmentCount(final int attachmentCount) {
         this.attachmentCount = attachmentCount;
     }
 
     public void setAttachments(final ESAttachment[] attachments) {
         this.attachments = attachments;
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((folderFullName == null) ? 0 : folderFullName.hashCode());
-        result = prime * result + ((popId == null) ? 0 : popId.hashCode());
-        result = prime * result + (int) (uid ^ (uid >>> 32));
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        IndexableMailMessage other = (IndexableMailMessage) obj;
-        if (folderFullName == null) {
-            if (other.folderFullName != null)
-                return false;
-        } else if (!folderFullName.equals(other.folderFullName))
-            return false;
-        if (popId == null) {
-            if (other.popId != null)
-                return false;
-        } else if (!popId.equals(other.popId))
-            return false;
-        if (uid != other.uid)
-            return false;
-        return true;
     }
 
     public void setBcc(final Address[] bcc) {

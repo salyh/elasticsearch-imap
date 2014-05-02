@@ -80,7 +80,7 @@ public class Build {
         return INSTANCE;
     }
 
-    private final String version;
+    private final String date;
 
     private final String hash;
 
@@ -88,7 +88,7 @@ public class Build {
 
     private final String timestamp;
 
-    private final String date;
+    private final String version;
 
     Build(final String version, final String hash, final String hashShort, final String timestamp, final String date) {
         this.version = version;

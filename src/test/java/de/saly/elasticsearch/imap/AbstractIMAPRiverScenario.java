@@ -37,6 +37,56 @@ import de.saly.elasticsearch.river.imap.IMAPRiver;
 
 public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTest {
 
+    protected void deleteScenarioIMAP(final String resource) throws Exception {
+
+        final RiverSettings settings = riverSettings("/" + resource);
+
+        final Properties props = new Properties();
+        final String indexName = XContentMapValues.nodeStringValue(settings.settings().get("mail_index_name"), "imapriver");
+        final String typeName = XContentMapValues.nodeStringValue(settings.settings().get("mail_type_name"), "mail");
+        final String user = XContentMapValues.nodeStringValue(settings.settings().get("user"), null);
+        final String password = XContentMapValues.nodeStringValue(settings.settings().get("password"), null);
+
+        for (final Map.Entry<String, Object> entry : settings.settings().entrySet()) {
+
+            if (entry != null && entry.getKey().startsWith("mail.")) {
+                props.setProperty(entry.getKey(), String.valueOf(entry.getValue()));
+            }
+        }
+
+        createInitialIMAPTestdata(props, user, password, 11, true); // 3*11
+                                                                    // =
+                                                                    // 33
+
+        registerRiver("myrivunit", resource);
+
+        Thread.sleep(1000);
+
+        Thread.sleep(25 * 1000);
+
+        Assert.assertEquals(33, getCount(indexName, typeName));
+
+        deleteMailsFromUserMailbox(props, "INBOX", 5, 3, user, password); // delete
+        // 3
+
+        Thread.sleep(25 * 1000);
+
+        Assert.assertEquals(30, getCount(indexName, typeName));
+
+        createInitialIMAPTestdata(props, user, password, 7, false); // 3*7=21
+
+        Thread.sleep(25 * 1000);
+
+        Assert.assertEquals(51, getCount(indexName, typeName));
+        deleteMailsFromUserMailbox(props, "INBOX", 4, 2, user, password); // delete
+        // 2
+
+        Thread.sleep(25 * 1000);
+
+        Assert.assertEquals(49, getCount(indexName, typeName));
+
+    }
+
     protected void deleteScenarioPOP(final String resource) throws Exception {
 
         final RiverSettings settings = riverSettings("/" + resource);
@@ -63,7 +113,7 @@ public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTes
         Thread.sleep(5 * 1000);
 
         deleteMailsFromUserMailbox(props, "INBOX", 1, 3, user, password); // delete
-                                                                          // 3
+        // 3
 
         Thread.sleep(5 * 1000);
 
@@ -72,7 +122,7 @@ public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTes
         Thread.sleep(5 * 1000);
 
         deleteMailsFromUserMailbox(props, "INBOX", 4, 2, user, password); // delete
-                                                                          // 2
+        // 2
 
         Thread.sleep(5 * 1000);
 
@@ -163,6 +213,63 @@ public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTes
         river.close();
 
         Assert.assertEquals(55, getCount(river.getIndexName(), river.getTypeName()));
+
+    }
+
+    protected void realIntegrationInteractive(final String resource) throws Exception {
+
+        final RiverSettings settings = riverSettings("/" + resource);
+        final IMAPRiver river = new IMAPRiver(new RiverName("a", "b"), settings, esSetup.client());
+
+        river.start();
+
+        while (true) {
+            Thread.sleep(1000);
+        }
+
+        // river.close();
+
+        // Assert.assertEquals(100, getCount(river));
+
+    }
+
+    protected void renameScenarioIMAP(final String resource) throws Exception {
+
+        final RiverSettings settings = riverSettings("/" + resource);
+
+        final Properties props = new Properties();
+        final String indexName = XContentMapValues.nodeStringValue(settings.settings().get("mail_index_name"), "imapriver");
+        final String typeName = XContentMapValues.nodeStringValue(settings.settings().get("mail_type_name"), "mail");
+        final String user = XContentMapValues.nodeStringValue(settings.settings().get("user"), null);
+        final String password = XContentMapValues.nodeStringValue(settings.settings().get("password"), null);
+
+        for (final Map.Entry<String, Object> entry : settings.settings().entrySet()) {
+
+            if (entry != null && entry.getKey().startsWith("mail.")) {
+                props.setProperty(entry.getKey(), String.valueOf(entry.getValue()));
+            }
+        }
+
+        createInitialIMAPTestdata(props, user, password, 10, true); // 3*10
+
+        registerRiver("myrivunit", resource);
+
+        Thread.sleep(1000);
+
+        Thread.sleep(25 * 1000);
+
+        Assert.assertEquals(30, getCount(indexName, typeName));
+
+        renameMailbox(props, "ES-IMAP-RIVER-TESTS", user, password);
+
+        Thread.sleep(25 * 1000);
+
+        deleteMailsFromUserMailbox(props, "renamed_from_ES-IMAP-RIVER-TESTS", 4, 2, user, password); // delete
+        // 2
+
+        Thread.sleep(25 * 1000);
+
+        Assert.assertEquals(28, getCount(indexName, typeName));
 
     }
 

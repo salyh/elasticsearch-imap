@@ -25,8 +25,6 @@
  **********************************************************************************************************************/
 package de.saly.elasticsearch.riverstate;
 
-
-
 import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -39,128 +37,102 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 
-public class ElasticsearchRiverStateManager implements RiverStateManager{
+public class ElasticsearchRiverStateManager implements RiverStateManager {
 
-	protected final ESLogger logger = ESLoggerFactory
-			.getLogger(this.getClass().getName());
-	private static final String RIVERSTATE_TYPE = "imapriverstate";
-	private static final String FOLDERSTATE_ID = "folderstate";
-	private static final String ERRORS_ID = "errors";
-	private final ObjectMapper mapper = new ObjectMapper();
-	private Client client;
-	private String index;
-	
-	
-	public ElasticsearchRiverStateManager client(final Client client) {
-		this.client = client;
-		return this;
-	}
-	
-	public ElasticsearchRiverStateManager index(final String index) {
-		this.index = index;
-		return this;
-	}
-	
-	public String index() {
-		return index;
-	}
-	
-	
-	@Override
-	public synchronized RiverState getRiverState(final Folder folder)
-			throws MessagingException {
+    private static final String ERRORS_ID = "errors";
+    private static final String FOLDERSTATE_ID = "folderstate";
+    private static final String RIVERSTATE_TYPE = "imapriverstate";
+    private Client client;
+    private String index;
+    private final ObjectMapper mapper = new ObjectMapper();
+    protected final ESLogger logger = ESLoggerFactory.getLogger(this.getClass().getName());
 
-		try {
+    public ElasticsearchRiverStateManager client(final Client client) {
+        this.client = client;
+        return this;
+    }
 
-			if (client.admin().indices().prepareExists(index()).execute()
-					.actionGet().isExists()) {
-				
-				final GetResponse response = client
-						.prepareGet(index(), RIVERSTATE_TYPE , FOLDERSTATE_ID+"_"+folder.getURLName().toString().hashCode())
-						.execute().get();
-				
-				if(!response.isSourceEmpty())
-				{
-				 return mapper.readValue(
-						response.getSourceAsString(),
-						new TypeReference<RiverState>() {
-						});
+    @Override
+    public synchronized RiverState getRiverState(final Folder folder) throws MessagingException {
 
-				
-				}
-			}
-		} catch (Exception ex) {
-			throw new MessagingException("Unable to get river state", ex);
-		} 
+        try {
 
-		
-		RiverState rs = new RiverState();
-		rs.setFolderUrl(folder.getURLName().toString());
-		rs.setLastUid(1L);
-		rs.setExists(true);
-		return rs;
+            if (client.admin().indices().prepareExists(index()).execute().actionGet().isExists()) {
 
-	}
-	
-	
-	@Override
-	public  void setRiverState(final RiverState state)
-			throws MessagingException {
+                final GetResponse response = client
+                        .prepareGet(index(), RIVERSTATE_TYPE, FOLDERSTATE_ID + "_" + folder.getURLName().toString().hashCode()).execute()
+                        .get();
 
-		try {
-			 logger.debug("set riverstate "+state);
-			
-			 client
-					.prepareIndex(index(), RIVERSTATE_TYPE , FOLDERSTATE_ID+"_"+state.getFolderUrl().hashCode())
-					.setSource(mapper.writeValueAsString(state)).execute()
-					.actionGet();
-			 
-			 logger.debug("set riverstate done");
-		} catch (Exception ex) {
-			throw new MessagingException("Unable to set river state", ex);
-		} 
+                if (!response.isSourceEmpty()) {
+                    return mapper.readValue(response.getSourceAsString(), new TypeReference<RiverState>() {
+                    });
 
-	}
+                }
+            }
+        } catch (final Exception ex) {
+            throw new MessagingException("Unable to get river state", ex);
+        }
 
-	
-	@Override
-	public  void onError(String errmsg, final Folder folder, final Exception e) {
+        final RiverState rs = new RiverState();
+        rs.setFolderUrl(folder.getURLName().toString());
+        rs.setLastUid(1L);
+        rs.setExists(true);
+        return rs;
 
-		logger.error("Folder " + folder.getFullName() + " throws an error:" + errmsg+e,e);
+    }
 
-		try {
-			client
-					.prepareIndex(index(), RIVERSTATE_TYPE , ERRORS_ID+"_"+folder.getURLName().toString().hashCode())
-					.setSource(folder.getURLName().toString(), errmsg+e).execute()
-					.actionGet();
-			
-			
-			
-		} catch (Exception ex) {
-			logger.error("Unable to log an error because of "+ex+errmsg, e);
-		} 
+    public String index() {
+        return index;
+    }
 
-	}
+    public ElasticsearchRiverStateManager index(final String index) {
+        this.index = index;
+        return this;
+    }
 
-	@Override
-	public  void onError(String errmsg,Message msg, Exception e) {
-		
+    @Override
+    public void onError(final String errmsg, final Folder folder, final Exception e) {
 
-		try {
-			logger.error("Message " + ((MimeMessage)msg).getMessageID() + " throws an error: "  +errmsg+ e,e);
-			
-			client
-					.prepareIndex(index(), RIVERSTATE_TYPE , ERRORS_ID+"_"+((MimeMessage)msg).getMessageID().hashCode())
-					.setSource(((MimeMessage)msg).getMessageID(), errmsg+e).execute()
-					.actionGet();
-			
-			
-			
-		} catch (Exception ex) {
-			logger.error("Unable to log an error because of "+ex+errmsg, e);
-		} 
-	}
-	
-	
+        logger.error("Folder " + folder.getFullName() + " throws an error:" + errmsg + e, e);
+
+        try {
+            client.prepareIndex(index(), RIVERSTATE_TYPE, ERRORS_ID + "_" + folder.getURLName().toString().hashCode())
+                    .setSource(folder.getURLName().toString(), errmsg + e).execute().actionGet();
+
+        } catch (final Exception ex) {
+            logger.error("Unable to log an error because of " + ex + errmsg, e);
+        }
+
+    }
+
+    @Override
+    public void onError(final String errmsg, final Message msg, final Exception e) {
+
+        try {
+            logger.error("Message " + ((MimeMessage) msg).getMessageID() + " throws an error: " + errmsg + e, e);
+
+            client.prepareIndex(index(), RIVERSTATE_TYPE, ERRORS_ID + "_" + ((MimeMessage) msg).getMessageID().hashCode())
+                    .setSource(((MimeMessage) msg).getMessageID(), errmsg + e).execute().actionGet();
+
+        } catch (final Exception ex) {
+            logger.error("Unable to log an error because of " + ex + errmsg, e);
+        }
+    }
+
+    @Override
+    public void setRiverState(final RiverState state) throws MessagingException {
+
+        try {
+            logger.debug("set riverstate " + state);
+
+            client.prepareIndex(index(), RIVERSTATE_TYPE, FOLDERSTATE_ID + "_" + state.getFolderUrl().hashCode())
+                    .setSource(mapper.writeValueAsString(state)).execute().actionGet();
+
+            logger.debug("set riverstate done");
+        } catch (final Exception ex) {
+            throw new MessagingException("Unable to set river state", ex);
+        }
+
+    }
 
 }

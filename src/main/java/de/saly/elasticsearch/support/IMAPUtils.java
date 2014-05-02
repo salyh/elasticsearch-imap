@@ -74,7 +74,7 @@ public class IMAPUtils {
 
     public static void open(final Folder folder) throws MessagingException {
 
-        if (folder != null && !folder.isOpen() && (folder.getType() & Folder.HOLDS_MESSAGES) != 0) {
+        if (folder != null && folder.exists() && !folder.isOpen() && (folder.getType() & Folder.HOLDS_MESSAGES) != 0) {
             folder.open(Folder.READ_ONLY);
         }
 

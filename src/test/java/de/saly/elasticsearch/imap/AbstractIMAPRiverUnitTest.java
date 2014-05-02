@@ -61,13 +61,9 @@ import org.junit.Rule;
 import org.junit.rules.TestName;
 
 import com.github.tlrx.elasticsearch.test.EsSetup;
-import com.icegreen.greenmail.user.GreenMailUser;
-import com.icegreen.greenmail.user.UserException;
-import com.icegreen.greenmail.util.GreenMail;
-import com.icegreen.greenmail.util.ServerSetup;
-import com.icegreen.greenmail.util.ServerSetupTest;
 
 import de.saly.elasticsearch.support.IMAPUtils;
+import de.saly.javamail.mock2.MockMailbox;
 
 public abstract class AbstractIMAPRiverUnitTest {
 
@@ -82,13 +78,10 @@ public abstract class AbstractIMAPRiverUnitTest {
     @Rule
     public TestName name = new TestName();
     protected EsSetup esSetup;
-    protected GreenMail greenMail;
 
     protected final ESLogger logger = ESLoggerFactory.getLogger(this.getClass().getName());
 
     protected final Builder settingsBuilder;
-
-    protected GreenMailUser user;
 
     protected AbstractIMAPRiverUnitTest() {
         super();
@@ -110,13 +103,7 @@ public abstract class AbstractIMAPRiverUnitTest {
 
         System.out.println("--------------------- SETUP " + name.getMethodName() + " -------------------------------------");
 
-        greenMail = new GreenMail(new ServerSetup[] { ServerSetupTest.POP3, ServerSetupTest.POP3S, ServerSetupTest.IMAP,
-                ServerSetupTest.IMAPS });
-        greenMail.start();
-
-        user = greenMail.setUser(EMAIL_USER_ADDRESS, USER_NAME, USER_PASSWORD);
-
-        logger.debug("Mailserver started");
+        MockMailbox.resetAll();
 
         // Instantiates a local node & client
 
@@ -139,10 +126,6 @@ public abstract class AbstractIMAPRiverUnitTest {
 
         if (esSetup != null) {
             esSetup.terminate();
-        }
-
-        if (null != greenMail) {
-            greenMail.stop();
         }
 
     }
@@ -269,7 +252,7 @@ public abstract class AbstractIMAPRiverUnitTest {
 
     }
 
-    protected void putMailInMailbox(final int messages) throws UserException, MessagingException {
+    protected void putMailInMailbox(final int messages) throws MessagingException {
 
         for (int i = 0; i < messages; i++) {
             final MimeMessage message = new MimeMessage((Session) null);
@@ -278,7 +261,7 @@ public abstract class AbstractIMAPRiverUnitTest {
             message.setSubject(EMAIL_SUBJECT + "::" + i);
             message.setText(EMAIL_TEXT + "::" + SID++);
             message.setSentDate(new Date());
-            user.deliver(message);
+            MockMailbox.get(EMAIL_USER_ADDRESS).getInbox().add(message);
         }
 
         logger.info("Putted " + messages + " into mailbox");

@@ -30,6 +30,12 @@ import org.junit.Test;
 public class RiverPopImapTestCase extends AbstractIMAPRiverScenario {
 
     @Test
+    public void testDeletesIMAPIntgr() throws Exception {
+
+        deleteScenarioIMAP("river-imaps-1.json");
+    }
+
+    @Test
     public void testDeletesPOP() throws Exception {
 
         deleteScenarioPOP("river-pop3-1.json");
@@ -45,6 +51,12 @@ public class RiverPopImapTestCase extends AbstractIMAPRiverScenario {
     @Test
     public void testImapPlainScenario() throws Exception {
         plainScenario("river-imaps-1.json");
+
+    }
+
+    @Test
+    public void testImapPlainScenarioInvalidFolderPattern() throws Exception {
+        plainScenario("river-imaps-invpattern.json");
 
     }
 
@@ -81,6 +93,12 @@ public class RiverPopImapTestCase extends AbstractIMAPRiverScenario {
     @Test
     public void testPopPlainScenarioOnceNoFirstRun() throws Exception {
         plainScenarioOnceNoFirstRun("river-pop3-1.json");
+    }
+
+    @Test
+    public void testRenameIMAPIntgr() throws Exception {
+
+        renameScenarioIMAP("river-imaps-1.json");
     }
 
 }

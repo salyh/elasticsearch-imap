@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<name>elasticsearch-river-imap</name>
+	<name>Elasticsearch IMAP River</name>
 	<modelVersion>4.0.0</modelVersion>
+	
+	<prerequisites>
+       <maven>3.1.0</maven>
+    </prerequisites>
+	
 	<groupId>de.saly.elasticsearch.plugin</groupId>
 	<artifactId>elasticsearch-river-imap</artifactId>
-	<version>0.0.5</version>
+	<version>0.0.6</version>
 	<packaging>jar</packaging>
 	<description>IMAP river for Elasticsearch</description>
 	<inceptionYear>2014</inceptionYear>
@@ -74,28 +79,16 @@
 
 
 		<dependency>
-			<groupId>com.icegreen</groupId>
-			<artifactId>greenmail</artifactId>
-			<version>1.3.1b</version>
+			<groupId>de.saly</groupId>
+			<artifactId>javamail-mock2-halfmock</artifactId>
+			<version>0.5-beta3</version>
 			<scope>test</scope>
-			<exclusions>
-				<exclusion>
-					<groupId>javax.mail</groupId>
-					<artifactId>mail</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-			<version>1.7.5</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
-			<version>1.7.5</version>
+			<version>1.7.7</version>
 			<scope>test</scope>
 
 		</dependency>
@@ -194,7 +187,7 @@
 
 			<plugin>
 				<artifactId>maven-clean-plugin</artifactId>
-				<version>2.4.1</version>
+				<version>2.5</version>
 				<configuration>
 					<filesets>
 						<fileset>
@@ -256,7 +249,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>buildnumber-maven-plugin</artifactId>
-				<version>1.2</version>
+				<version>1.3</version>
 				<executions>
 					<execution>
 						<phase>validate</phase>
@@ -301,10 +294,22 @@
 					<outputEncoding>UTF-8</outputEncoding>
 				</configuration>
 			</plugin>
-			<!--<plugin> <groupId>com.github.github</groupId> <artifactId>site-maven-plugin</artifactId> 
-				<version>0.9</version> <configuration> <message>Building site for ${project.version}</message> 
-				</configuration> <executions> <execution> <goals> <goal>site</goal> </goals> 
-				<phase>site</phase> </execution> </executions> </plugin> -->
+			<plugin>
+                <groupId>com.github.github</groupId>
+                <artifactId>site-maven-plugin</artifactId>
+                <version>0.9</version>
+                <configuration>
+                    <message>Building site for ${project.version}</message>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>site</goal>
+                        </goals>
+                        <phase>site</phase>
+                    </execution>
+                </executions>
+            </plugin>
 		</plugins>
 	</build>
 
@@ -328,7 +333,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jxr-plugin</artifactId>
-				<version>2.1</version>
+				<version>2.4</version>
 			</plugin>
 
 			<plugin>
@@ -340,7 +345,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-checkstyle-plugin</artifactId>
-				<version>2.12</version>
+				<version>2.12.1</version>
 				<configuration>
 					<configLocation>buildconf/checkstyle/checkstyle.xml</configLocation>
 					<suppressionsLocation>buildconf/checkstyle/checkstyle-suppressions.xml</suppressionsLocation>
@@ -382,5 +387,38 @@
 				</plugins>
 			</build>
 		</profile>
+		
+		<profile>
+			<id>release-sign-artifacts</id>
+			<activation>
+				<property>
+					<name>sign</name>
+					<value>true</value>
+				</property>
+			</activation>
+			<properties>
+				<gpg.keyname>7903F81190910A83</gpg.keyname>
+				<gpg.useagent>false</gpg.useagent>
+			</properties>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>1.5</version>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		
 	</profiles>
 </project>

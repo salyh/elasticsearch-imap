@@ -33,10 +33,10 @@ Prerequisites:
 * Elasticsearch 1.1.0 or higher
 * At least one IMAP4 or POP3 server to connect to
 
-``plugin.sh|.bat -i river-imap -u http://dl.bintray.com/salyh/maven/de/saly/elasticsearch/plugin/elasticsearch-river-imap/0.0.5/elasticsearch-river-imap-0.0.5-plugin.zip``
+``plugin.sh|.bat -i river-imap -u http://dl.bintray.com/salyh/maven/de/saly/elasticsearch/plugin/elasticsearch-river-imap/0.0.6/elasticsearch-river-imap-0.0.6-plugin.zip``
 
 <h3>Configuration</h3>
-<pre>curl -XPUT 'http://localhost:9200/_river/name of your river/_meta' -d '{
+<pre>curl -XPUT 'http://localhost:9200/_river/nameofyourriver/_meta' -d '{
 
    "type":"imap",
    "mail.store.protocol":"imap",
@@ -85,6 +85,53 @@ Prerequisites:
 * ``type_mapping`` - optional mapping for the Elasticsearch index type
 
 Note: For POP3 only the "INBOX" folder is supported. This is a limitation of the POP3 protocol.
+
+<h3>Default Mapping Example</h3>
+```json
+{
+   "_index":"my_imap_river_index",
+   "_type":"my_imap_river_type",
+   "_id":"759::imap://es_imapriver_unittest%40xxx.de@imap.xxx.com/INBOX",
+   "_score":1.0,
+   "_source":{
+      "attachmentCount":0,
+      "attachments":null,
+      "bcc":null,
+      "cc":null,
+      "contentType":"text/plain; charset=us-ascii",
+      "folderFullName":"INBOX",
+      "folderUri":"imap://es_imapriver_unittest%40xxx.de@imap.xxx.com/INBOX",
+      "from":{
+         "email":"esimaprivertest@localhost.com",
+         "personal":null
+      },
+      "headers":{
+         "MIME-Version":"1.0",
+         "Message-ID":"<627988622.2.1399051139976.JavaMail.salyh@yyy-xxx.local>",
+         "Subject":"SID::2",
+         "Date":"Fri, 2 May 2014 19:18:59 +0200 (CEST)",
+         "Content-Transfer-Encoding":"7bit",
+         "To":"es_imapriver_unittest@localhost",
+         "Content-Type":"text/plain; charset=us-ascii",
+         "From":"esimaprivertest@localhost.com"
+      },
+      "mailboxType":"IMAP",
+      "popId":null,
+      "receivedDate":1399051139000,
+      "sentDate":1399051139000,
+      "size":337,
+      "subject":"SID::2",
+      "textContent":"This is a test e-mail.::2\r\n",
+      "to":[
+         {
+            "email":"es_imapriver_unittest@localhost",
+            "personal":null
+         }
+      ],
+      "uid":759
+   }
+}
+```
 
 <h3>License</h3> 
 Copyright (C) 2014 by Hendrik Saly (http://saly.de) and others.

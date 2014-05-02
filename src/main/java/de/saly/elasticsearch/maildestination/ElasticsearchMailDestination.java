@@ -65,14 +65,14 @@ public class ElasticsearchMailDestination implements MailDestination {
     private volatile boolean closed;
 
     private volatile boolean error;
-    
-    private volatile boolean started;
 
     private String index;
 
     private Map<String, Object> mapping;
 
     private Map<String, Object> settings;
+
+    private volatile boolean started;
 
     private boolean stripTagsFromTextContent = true;
 
@@ -285,8 +285,10 @@ public class ElasticsearchMailDestination implements MailDestination {
 
     @Override
     public synchronized ElasticsearchMailDestination startup() throws IOException {
-        
-        if(started) return this;
+
+        if (started) {
+            return this;
+        }
         waitForCluster();
         createIndexIfNotExists();
         started = true;
