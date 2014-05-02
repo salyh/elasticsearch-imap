@@ -1,0 +1,6 @@
+de.saly.elasticsearch.maildestination
+de.saly.elasticsearch.mailsource
+de.saly.elasticsearch.plugin.river.imap
+de.saly.elasticsearch.river.imap
+de.saly.elasticsearch.riverstate
+de.saly.elasticsearch.support
