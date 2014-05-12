@@ -41,7 +41,9 @@ import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
@@ -51,6 +53,7 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.index.get.GetField;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
@@ -148,6 +151,28 @@ public class ElasticsearchMailDestination implements MailDestination {
         logger.debug("Currently locally stored messages for folder {}: {}", folderName, uids.size());
 
         return uids;
+
+    }
+
+    @Override
+    public int getFlaghashcode(final String id) throws IOException, MessagingException {
+
+        client.admin().indices().refresh(new RefreshRequest()).actionGet();
+
+        final GetResponse getResponse = client.prepareGet().setIndex(index).setType(type).setId(id)
+                .setFields(new String[] { "flaghashcode" }).execute().actionGet();
+
+        if (getResponse == null || !getResponse.isExists()) {
+            return -1;
+        }
+
+        final GetField flaghashcodeField = getResponse.getField("flaghashcode");
+
+        if (flaghashcodeField == null || flaghashcodeField.getValue() == null || !(flaghashcodeField.getValue() instanceof Integer)) {
+            throw new IOException("No flaghashcode field for id " + id);
+        }
+
+        return ((Integer) flaghashcodeField.getValue()).intValue();
 
     }
 
@@ -312,14 +337,24 @@ public class ElasticsearchMailDestination implements MailDestination {
         }
 
         final XContentBuilder mappingBuilder = jsonBuilder().startObject().startObject(type).startObject("properties")
-                .startObject("folderFullName").field("index", "not_analyzed").field("type", "string").endObject().endObject().endObject()
-                .endObject();
-
-        createIndexRequestBuilder.addMapping(type, mappingBuilder);
-        logger.debug("Mapping: {}", mappingBuilder.bytes().toUtf8());
+                .startObject("folderFullName").field("index", "not_analyzed").field("type", "string").endObject()
+                .startObject("receivedDate").field("type", "date").field("format", "basic_date_time").endObject().startObject("sentDate")
+                .field("type", "date").field("format", "basic_date_time").endObject().startObject("flaghashcode").field("type", "integer")
+                .endObject()
+                // .startObject("attachments").startObject("properties").startObject("content").field("type",
+                // "attachment").endObject().endObject().endObject()
+                .endObject().endObject().endObject();
 
         final CreateIndexResponse res = createIndexRequestBuilder.get();
         logger.info("Index {} and typemapping for {} created? {}", index, type, res.isAcknowledged());
+
+        final PutMappingResponse response = client.admin().indices().preparePutMapping(index).setType(type).setSource(mappingBuilder)
+                .execute().actionGet();
+
+        if (!response.isAcknowledged()) {
+            throw new IOException("Could not define mapping for type [" + index + "]/[" + type + "].");
+        }
+
     }
 
     private void waitForCluster() throws IOException {

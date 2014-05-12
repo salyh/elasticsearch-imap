@@ -25,6 +25,8 @@
  **********************************************************************************************************************/
 package de.saly.elasticsearch.riverstate;
 
+import java.io.IOException;
+
 import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -32,10 +34,14 @@ import javax.mail.internet.MimeMessage;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
+import org.elasticsearch.ElasticsearchTimeoutException;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.unit.TimeValue;
 
 public class ElasticsearchRiverStateManager implements RiverStateManager {
 
@@ -56,6 +62,8 @@ public class ElasticsearchRiverStateManager implements RiverStateManager {
     public synchronized RiverState getRiverState(final Folder folder) throws MessagingException {
 
         try {
+
+            waitForCluster();
 
             if (client.admin().indices().prepareExists(index()).execute().actionGet().isExists()) {
 
@@ -97,7 +105,8 @@ public class ElasticsearchRiverStateManager implements RiverStateManager {
 
         try {
             client.prepareIndex(index(), RIVERSTATE_TYPE, ERRORS_ID + "_" + folder.getURLName().toString().hashCode())
-                    .setSource(folder.getURLName().toString(), errmsg + e).execute().actionGet();
+                    .setSource(mapper.writeValueAsString(new IndexableError(null, folder.getURLName().toString(), errmsg + e))).execute()
+                    .actionGet();
 
         } catch (final Exception ex) {
             logger.error("Unable to log an error because of " + ex + errmsg, e);
@@ -112,7 +121,8 @@ public class ElasticsearchRiverStateManager implements RiverStateManager {
             logger.error("Message " + ((MimeMessage) msg).getMessageID() + " throws an error: " + errmsg + e, e);
 
             client.prepareIndex(index(), RIVERSTATE_TYPE, ERRORS_ID + "_" + ((MimeMessage) msg).getMessageID().hashCode())
-                    .setSource(((MimeMessage) msg).getMessageID(), errmsg + e).execute().actionGet();
+                    .setSource(mapper.writeValueAsString(new IndexableError(((MimeMessage) msg).getMessageID(), null, errmsg + e)))
+                    .execute().actionGet();
 
         } catch (final Exception ex) {
             logger.error("Unable to log an error because of " + ex + errmsg, e);
@@ -131,6 +141,52 @@ public class ElasticsearchRiverStateManager implements RiverStateManager {
             logger.debug("set riverstate done");
         } catch (final Exception ex) {
             throw new MessagingException("Unable to set river state", ex);
+        }
+
+    }
+
+    private void waitForCluster() throws IOException {
+        waitForCluster(ClusterHealthStatus.YELLOW, TimeValue.timeValueSeconds(30));
+    }
+
+    private void waitForCluster(final ClusterHealthStatus status, final TimeValue timeout) throws IOException {
+        try {
+            logger.debug("waiting for cluster state {}", status.name());
+            final ClusterHealthResponse healthResponse = client.admin().cluster().prepareHealth().setWaitForStatus(status)
+                    .setTimeout(timeout).execute().actionGet();
+            if (healthResponse.isTimedOut()) {
+                throw new IOException("cluster state is " + healthResponse.getStatus().name() + " and not " + status.name()
+                        + ", cowardly refusing to continue with operations");
+            } else {
+                logger.debug("... cluster state ok");
+            }
+        } catch (final ElasticsearchTimeoutException e) {
+            throw new IOException("timeout, cluster does not respond to health request, cowardly refusing to continue with operations");
+        }
+    }
+
+    private static class IndexableError {
+        private final String errormsg;
+        private final String folderurl;
+        private final String messageid;
+
+        public IndexableError(final String messageid, final String folderurl, final String errormsg) {
+            super();
+            this.messageid = messageid;
+            this.folderurl = folderurl;
+            this.errormsg = errormsg;
+        }
+
+        public String getErrormsg() {
+            return errormsg;
+        }
+
+        public String getFolderurl() {
+            return folderurl;
+        }
+
+        public String getMessageid() {
+            return messageid;
         }
 
     }

@@ -38,7 +38,9 @@ public class RiverPopImapIntegrationTestCase extends RiverPopImapTestCase {
 
     // @Test
     public void testRealInteractive() throws Exception {
-        realIntegrationInteractive("priv-river-strato-pop3.json");
+        // realIntegrationInteractive("priv-river-imap-strato-googlearchive.json");
+        // realIntegrationInteractive("priv-river-imap-strato.json");
+        // realIntegrationInteractive("priv-river-strato-pop3.json");
     }
 
     @Override

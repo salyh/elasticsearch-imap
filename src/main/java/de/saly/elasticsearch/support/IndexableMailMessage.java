@@ -27,14 +27,13 @@ package de.saly.elasticsearch.support;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import javax.mail.BodyPart;
 import javax.mail.Header;
@@ -45,7 +44,6 @@ import javax.mail.Multipart;
 import javax.mail.Part;
 import javax.mail.UIDFolder;
 import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -55,7 +53,6 @@ import org.codehaus.jackson.map.SerializationConfig;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 
-import com.sun.mail.imap.IMAPInputStream;
 import com.sun.mail.pop3.POP3Folder;
 
 public class IndexableMailMessage {
@@ -69,11 +66,13 @@ public class IndexableMailMessage {
         @SuppressWarnings("unchecked")
         final Enumeration<Header> allHeaders = jmm.getAllHeaders();
 
-        final Map<String, String> headersMap = new HashMap<String, String>();
+        final Set<IndexableHeader> headerList = new HashSet<IndexableHeader>();
         while (allHeaders.hasMoreElements()) {
             final Header h = allHeaders.nextElement();
-            headersMap.put(h.getName(), h.getValue());
+            headerList.add(new IndexableHeader(h.getName(), h.getValue()));
         }
+
+        im.setHeaders(headerList.toArray(new IndexableHeader[headerList.size()]));
 
         if (jmm.getFolder() instanceof POP3Folder) {
             im.setPopId(((POP3Folder) jmm.getFolder()).getUID(jmm));
@@ -82,8 +81,6 @@ public class IndexableMailMessage {
         } else {
             im.setMailboxType("IMAP");
         }
-
-        im.setHeaders(headersMap);
 
         if (jmm.getFolder() instanceof UIDFolder) {
             im.setUid(((UIDFolder) jmm.getFolder()).getUID(jmm));
@@ -120,18 +117,19 @@ public class IndexableMailMessage {
 
         if (withTextContent) {
 
-            try {
+            // try {
 
-                String textContent = getText(jmm, 0);
+            String textContent = getText(jmm, 0);
 
-                if (stripTags) {
-                    textContent = stripTags(textContent);
-                }
-
-                im.setTextContent(textContent);
-            } catch (final Exception e) {
-                logger.error("Unable to retrieve text content for message {} due to {}", e, ((MimeMessage) jmm).getMessageID(), e);
+            if (stripTags) {
+                textContent = stripTags(textContent);
             }
+
+            im.setTextContent(textContent);
+            // } catch (final Exception e) {
+            // logger.error("Unable to retrieve text content for message {} due to {}",
+            // e, ((MimeMessage) jmm).getMessageID(), e);
+            // }
         }
 
         if (withAttachments) {
@@ -169,6 +167,10 @@ public class IndexableMailMessage {
             }
 
         }
+
+        im.setFlags(IMAPUtils.toStringArray(jmm.getFlags()));
+        im.setFlaghashcode(jmm.getFlags().hashCode());
+
         return im;
     }
 
@@ -179,21 +181,6 @@ public class IndexableMailMessage {
         }
 
         // TODO fix encoding for buggy encoding headers
-        /*
-        String xEncoding[] = p.getHeader("Content-Transfer-Encoding");
-        
-        
-        if(xEncoding != null){
-        	if(xEncoding.length > 0){
-        					
-        		if(xEncoding[0].equalsIgnoreCase("7Bit;")){
-        			
-        			p.removeHeader("Content-Transfer-Encoding");
-        			p.addHeader("Content-Transfer-Encoding", "7Bit");
-        		}
-        	}
-        	
-        }*/
 
         if (p.isMimeType("text/*")) {
 
@@ -207,14 +194,16 @@ public class IndexableMailMessage {
 
             if (content instanceof InputStream) {
 
-                final IMAPInputStream in = (IMAPInputStream) p.getContent();
-                final String s = IOUtils.toString(in, Charset.forName("UTF-8"));
+                final InputStream in = (InputStream) content;
+                // TODO guess encoding with
+                // http://code.google.com/p/juniversalchardet/
+                final String s = IOUtils.toString(in, "UTF-8");
                 IOUtils.closeQuietly(in);
                 return s;
 
             }
 
-            throw new MessagingException("unknown content type " + content.getClass());
+            throw new MessagingException("Unknown content class representation: " + content.getClass());
 
         }
 
@@ -270,13 +259,17 @@ public class IndexableMailMessage {
 
     private String contentType;
 
+    private int flaghashcode;
+
+    private String[] flags;
+
     private String folderFullName;
 
     private String folderUri;
 
     private Address from;
 
-    private Map<String, String> headers;
+    private IndexableHeader[] headers;
 
     private String mailboxType;
 
@@ -360,6 +353,14 @@ public class IndexableMailMessage {
         return contentType;
     }
 
+    public int getFlaghashcode() {
+        return flaghashcode;
+    }
+
+    public String[] getFlags() {
+        return flags;
+    }
+
     public String getFolderFullName() {
         return folderFullName;
     }
@@ -372,7 +373,7 @@ public class IndexableMailMessage {
         return from;
     }
 
-    public Map<String, String> getHeaders() {
+    public IndexableHeader[] getHeaders() {
         return headers;
     }
 
@@ -442,6 +443,14 @@ public class IndexableMailMessage {
         this.contentType = contentType;
     }
 
+    public void setFlaghashcode(final int flaghashcode) {
+        this.flaghashcode = flaghashcode;
+    }
+
+    public void setFlags(final String[] flags) {
+        this.flags = flags;
+    }
+
     public void setFolderFullName(final String folderFullName) {
         this.folderFullName = folderFullName;
     }
@@ -454,7 +463,7 @@ public class IndexableMailMessage {
         this.from = from;
     }
 
-    public void setHeaders(final Map<String, String> headers) {
+    public void setHeaders(final IndexableHeader[] headers) {
         this.headers = headers;
     }
 
@@ -644,6 +653,56 @@ public class IndexableMailMessage {
 
         public void setSize(final int size) {
             this.size = size;
+        }
+
+    }
+
+    public static class IndexableHeader {
+        final String name;
+        final String value;
+
+        public IndexableHeader(final String name, final String value) {
+            super();
+            this.name = name;
+            this.value = value;
+        }
+
+        @Override
+        public boolean equals(final Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final IndexableHeader other = (IndexableHeader) obj;
+            if (name == null) {
+                if (other.name != null) {
+                    return false;
+                }
+            } else if (!name.equals(other.name)) {
+                return false;
+            }
+            return true;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + (name == null ? 0 : name.hashCode());
+            return result;
         }
 
     }

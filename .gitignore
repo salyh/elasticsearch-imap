@@ -20,3 +20,4 @@ target/
 .settings/
 *.sh
 elasticsearch-*/
+/pom.xml.versionsBackup

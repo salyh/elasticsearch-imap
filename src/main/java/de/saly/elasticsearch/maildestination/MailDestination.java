@@ -40,6 +40,8 @@ public interface MailDestination {
     @SuppressWarnings("rawtypes")
     public abstract Set getCurrentlyStoredMessageUids(String folderName, boolean isPop) throws IOException, MessagingException;
 
+    public int getFlaghashcode(String id) throws IOException, MessagingException;
+
     public abstract Set<String> getFolderNames() throws IOException, MessagingException;
 
     public abstract void onMessage(Message msg) throws IOException, MessagingException;

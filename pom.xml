@@ -10,7 +10,7 @@
 	
 	<groupId>de.saly.elasticsearch.plugin</groupId>
 	<artifactId>elasticsearch-river-imap</artifactId>
-	<version>0.0.6</version>
+	<version>0.0.7-b12</version>
 	<packaging>jar</packaging>
 	<description>IMAP river for Elasticsearch</description>
 	<inceptionYear>2014</inceptionYear>
@@ -123,7 +123,7 @@
 		<dependency>
 			<groupId>com.sun.mail</groupId>
 			<artifactId>javax.mail</artifactId>
-			<version>1.5.1</version>
+			<version>1.5.2</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>activation</artifactId>

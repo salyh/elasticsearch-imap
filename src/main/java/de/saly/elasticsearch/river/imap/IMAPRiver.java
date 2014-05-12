@@ -127,6 +127,8 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
 
         final boolean withTextContent = XContentMapValues.nodeBooleanValue(imapSettings.get("with_text_content"), true);
 
+        final boolean withFlagSync = XContentMapValues.nodeBooleanValue(imapSettings.get("with_flag_sync"), true);
+
         final boolean withAttachments = XContentMapValues.nodeBooleanValue(imapSettings.get("with_attachments"), false);
 
         final boolean stripTagsFromTextContent = XContentMapValues.nodeBooleanValue(imapSettings.get("with_striptags_from_textcontent"),
@@ -162,7 +164,7 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
         riverStateManager = new ElasticsearchRiverStateManager().client(client).index(indexName);
 
         if (props.getProperty("mail.store.protocol").toLowerCase().contains("imap")) {
-            mailSource = new ParallelPollingIMAPMailSource(props, threads, user, password);
+            mailSource = new ParallelPollingIMAPMailSource(props, threads, user, password).setWithFlagSync(withFlagSync);
         } else {
             mailSource = new ParallelPollingPOPMailSource(props, threads, user, password);
         }
@@ -275,11 +277,11 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
 
             sched.scheduleJob(job, trigger);
             sched.start();
+            logger.info("IMAPRiver started");
 
         } catch (final Exception e) {
             logger.error("Unable to start IMAPRiver due to " + e, e);
         }
 
-        logger.info("IMAPRiver started");
     }
 }

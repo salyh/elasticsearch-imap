@@ -25,8 +25,12 @@
  **********************************************************************************************************************/
 package de.saly.elasticsearch.support;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.mail.FetchProfile;
 import javax.mail.FetchProfile.Item;
+import javax.mail.Flags;
 import javax.mail.Folder;
 import javax.mail.MessagingException;
 import javax.mail.Store;
@@ -36,6 +40,7 @@ import com.sun.mail.imap.IMAPFolder.FetchProfileItem;
 
 public class IMAPUtils {
 
+    public static final FetchProfile FETCH_PROFILE_FLAGS_UID = new FetchProfile();
     public static final FetchProfile FETCH_PROFILE_HEAD = new FetchProfile();
     public static final FetchProfile FETCH_PROFILE_UID = new FetchProfile();
 
@@ -44,7 +49,8 @@ public class IMAPUtils {
         FETCH_PROFILE_HEAD.add(Item.ENVELOPE);
         FETCH_PROFILE_HEAD.add(Item.CONTENT_INFO);
         FETCH_PROFILE_HEAD.add(FetchProfileItem.HEADERS);
-        // FETCH_PROFILE_HEAD.add(FetchProfileItem.FLAGS);
+        FETCH_PROFILE_FLAGS_UID.add(Item.FLAGS);
+        FETCH_PROFILE_FLAGS_UID.add(UIDFolder.FetchProfileItem.UID);
 
         FETCH_PROFILE_UID.add(UIDFolder.FetchProfileItem.UID);
 
@@ -78,6 +84,38 @@ public class IMAPUtils {
             folder.open(Folder.READ_ONLY);
         }
 
+    }
+
+    public static String[] toStringArray(final Flags flags) {
+        final List<String> flagsL = new ArrayList<String>(10);
+
+        if (flags.contains(Flags.Flag.DELETED)) {
+            flagsL.add("Deleted");
+        }
+        if (flags.contains(Flags.Flag.ANSWERED)) {
+            flagsL.add("Answered");
+        }
+        if (flags.contains(Flags.Flag.DRAFT)) {
+            flagsL.add("Draft");
+        }
+        if (flags.contains(Flags.Flag.FLAGGED)) {
+            flagsL.add("Flagged");
+        }
+        if (flags.contains(Flags.Flag.RECENT)) {
+            flagsL.add("Recent");
+        }
+        if (flags.contains(Flags.Flag.SEEN)) {
+            flagsL.add("Seen");
+        }
+
+        if (flags.contains(Flags.Flag.USER)) {
+            final String[] userFlags = flags.getUserFlags();
+            for (int j = 0; j < userFlags.length; j++) {
+                flagsL.add(userFlags[j]);
+            }
+        }
+
+        return flagsL.toArray(new String[flagsL.size()]);
     }
 
 }

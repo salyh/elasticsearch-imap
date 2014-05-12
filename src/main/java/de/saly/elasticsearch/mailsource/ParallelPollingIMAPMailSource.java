@@ -45,6 +45,7 @@ import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.UIDFolder;
+import javax.mail.internet.MimeMessage;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
@@ -66,6 +67,7 @@ public class ParallelPollingIMAPMailSource implements MailSource {
     private RiverStateManager stateManager;
     private final int threadCount;
     private final String user;
+    private boolean withFlagSync = true;
     protected final ESLogger logger = ESLoggerFactory.getLogger(this.getClass().getName());
 
     public ParallelPollingIMAPMailSource(final Properties props, final int threadCount, final String user, final String password) {
@@ -141,6 +143,11 @@ public class ParallelPollingIMAPMailSource implements MailSource {
     @Override
     public void setStateManager(final RiverStateManager stateManager) {
         this.stateManager = stateManager;
+    }
+
+    public ParallelPollingIMAPMailSource setWithFlagSync(final boolean withFlagSync) {
+        this.withFlagSync = withFlagSync;
+        return this;
     }
 
     private ProcessResult process(final int messageCount, final int start, final String folderName) {
@@ -226,6 +233,7 @@ public class ParallelPollingIMAPMailSource implements MailSource {
             for (final Message m : msgs) {
                 try {
 
+                    IMAPUtils.open(folder);
                     final long uid = uidfolder.getUID(m);
 
                     mailDestination.onMessage(m);
@@ -310,6 +318,42 @@ public class ParallelPollingIMAPMailSource implements MailSource {
             if (messageCount == 0) {
                 logger.debug("Folder {} is empty", folder.getFullName());
             } else {
+
+                if (withFlagSync) {
+                    // detect flag change
+                    final Message[] flagMessages = folder.getMessages();
+                    folder.fetch(flagMessages, IMAPUtils.FETCH_PROFILE_FLAGS_UID);
+
+                    for (final Message message : flagMessages) {
+                        try {
+
+                            final long uid = ((UIDFolder) message.getFolder()).getUID(message);
+
+                            final String id = uid + "::" + message.getFolder().getURLName();
+
+                            final int storedHashcode = mailDestination.getFlaghashcode(id);
+
+                            if (storedHashcode == -1) {
+                                // New mail which is not indexed yet
+                                continue;
+                            }
+
+                            final int flagHashcode = message.getFlags().hashCode();
+
+                            if (flagHashcode != storedHashcode) {
+                                // flags change for this message, must update
+                                mailDestination.onMessage(message);
+
+                                if (logger.isDebugEnabled()) {
+                                    logger.debug("Update " + id + " because of flag change");
+                                }
+                            }
+                        } catch (final Exception e) {
+                            logger.error("Error detecting flagchanges for message " + ((MimeMessage) message).getMessageID(), e);
+                            stateManager.onError("Error detecting flagchanges", message, e);
+                        }
+                    }
+                }
 
                 final long highestUID = riverState.getLastUid(); // this uid is
                                                                  // already
@@ -499,6 +543,7 @@ public class ParallelPollingIMAPMailSource implements MailSource {
                     return;
                 }
                 IMAPUtils.open(folder);
+
                 try {
                     fetch(folder);
                 } finally {

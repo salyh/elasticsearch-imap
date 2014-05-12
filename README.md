@@ -33,7 +33,7 @@ Prerequisites:
 * Elasticsearch 1.1.0 or higher
 * At least one IMAP4 or POP3 server to connect to
 
-``plugin.sh|.bat -i river-imap -u http://dl.bintray.com/salyh/maven/de/saly/elasticsearch/plugin/elasticsearch-river-imap/0.0.6/elasticsearch-river-imap-0.0.6-plugin.zip``
+``plugin.sh|.bat -i river-imap -u http://dl.bintray.com/salyh/maven/de/saly/elasticsearch/plugin/elasticsearch-river-imap/0.0.7-b12/elasticsearch-river-imap-0.0.7-b12-plugin.zip``
 
 <h3>Configuration</h3>
 <pre>curl -XPUT 'http://localhost:9200/_river/nameofyourriver/_meta' -d '{
@@ -60,6 +60,7 @@ Prerequisites:
    "with_striptags_from_textcontent":true,
    "with_attachments":false,
    "with_text_content":true,
+   "with_flag_sync":true,
    "index_settings" : null,
    "type_mapping" : null
    
@@ -81,6 +82,7 @@ Prerequisites:
 * ``with_striptags_from_textcontent`` - if ``true`` then html/xml tags are stripped from text content (default: ``true``)
 * ``with_attachments`` - if ``true`` then attachments will be indexed (default: ``false``)
 * ``with_text_content`` - if ``true`` then the text content of the mail is indexed (default: ``true``)
+* ``with_flag_sync`` - IMAP only: if ``true`` then message flag changes will be detected and indexed. Maybe slow for very huge mailboxes. (default: ``true``)
 * ``index_settings`` - optional settings for the Elasticsearch index
 * ``type_mapping`` - optional mapping for the Elasticsearch index type
 
@@ -88,49 +90,188 @@ Note: For POP3 only the "INBOX" folder is supported. This is a limitation of the
 
 <h3>Default Mapping Example</h3>
 ```json
+"mail" : {
+        "properties" : {
+          "attachmentCount" : {
+            "type" : "long"
+          },
+          "bcc" : {
+            "properties" : {
+              "email" : {
+                "type" : "string"
+              },
+              "personal" : {
+                "type" : "string"
+              }
+            }
+          },
+          "cc" : {
+            "properties" : {
+              "email" : {
+                "type" : "string"
+              },
+              "personal" : {
+                "type" : "string"
+              }
+            }
+          },
+          "contentType" : {
+            "type" : "string"
+          },
+          "flaghashcode" : {
+            "type" : "integer"
+          },
+          "flags" : {
+            "type" : "string"
+          },
+          "folderFullName" : {
+            "type" : "string",
+            "index" : "not_analyzed"
+          },
+          "folderUri" : {
+            "type" : "string"
+          },
+          "from" : {
+            "properties" : {
+              "email" : {
+                "type" : "string"
+              },
+              "personal" : {
+                "type" : "string"
+              }
+            }
+          },
+          "headers" : {
+            "properties" : {
+              "name" : {
+                "type" : "string"
+              },
+              "value" : {
+                "type" : "string"
+              }
+            }
+          },
+          "mailboxType" : {
+            "type" : "string"
+          },
+          "receivedDate" : {
+            "type" : "date",
+            "format" : "basic_date_time"
+          },
+          "sentDate" : {
+            "type" : "date",
+            "format" : "basic_date_time"
+          },
+          "size" : {
+            "type" : "long"
+          },
+          "subject" : {
+            "type" : "string"
+          },
+          "textContent" : {
+            "type" : "string"
+          },
+          "to" : {
+            "properties" : {
+              "email" : {
+                "type" : "string"
+              },
+              "personal" : {
+                "type" : "string"
+              }
+            }
+          },
+          "uid" : {
+            "type" : "long"
+          }
+        }
+      }
+    }
+```
+
+<h3>Content Example</h3>
+```json
 {
-   "_index":"my_imap_river_index",
-   "_type":"my_imap_river_type",
-   "_id":"759::imap://es_imapriver_unittest%40xxx.de@imap.xxx.com/INBOX",
-   "_score":1.0,
-   "_source":{
-      "attachmentCount":0,
-      "attachments":null,
-      "bcc":null,
-      "cc":null,
-      "contentType":"text/plain; charset=us-ascii",
-      "folderFullName":"INBOX",
-      "folderUri":"imap://es_imapriver_unittest%40xxx.de@imap.xxx.com/INBOX",
-      "from":{
-         "email":"esimaprivertest@localhost.com",
-         "personal":null
-      },
-      "headers":{
-         "MIME-Version":"1.0",
-         "Message-ID":"<627988622.2.1399051139976.JavaMail.salyh@yyy-xxx.local>",
-         "Subject":"SID::2",
-         "Date":"Fri, 2 May 2014 19:18:59 +0200 (CEST)",
-         "Content-Transfer-Encoding":"7bit",
-         "To":"es_imapriver_unittest@localhost",
-         "Content-Type":"text/plain; charset=us-ascii",
-         "From":"esimaprivertest@localhost.com"
-      },
-      "mailboxType":"IMAP",
-      "popId":null,
-      "receivedDate":1399051139000,
-      "sentDate":1399051139000,
-      "size":337,
-      "subject":"SID::2",
-      "textContent":"This is a test e-mail.::2\r\n",
-      "to":[
-         {
-            "email":"es_imapriver_unittest@localhost",
-            "personal":null
-         }
-      ],
-      "uid":759
-   }
+      "_index" : "imapriverdata",
+      "_type" : "mail",
+      "_id" : "50220::imap://test%40xxx.com@imap.strato.de/import",
+      "_score" : 1.0, "_source" : {
+  "attachmentCount" : 0,
+  "attachments" : null,
+  "bcc" : null,
+  "cc" : null,
+  "contentType" : "text/plain; charset=ISO-8859-15",
+  "flaghashcode" : 16,
+  "flags" : [ "Recent" ],
+  "folderFullName" : "test",
+  "folderUri" : "imap://test%40xxx.com@imap.strato.de/import",
+  "from" : {
+    "email" : "suchagent@isrch.de",
+    "personal" : null
+  },
+  "headers" : [ {
+    "name" : "Subject",
+    "value" : "Suchagent Wohnung mieten in Berlin -  1 neues Objekt gefunden!"
+  }, {
+    "name" : "Return-Path",
+    "value" : "<suchagent@isrch.de>"
+  }, {
+    "name" : "Content-Transfer-Encoding",
+    "value" : "quoted-printable"
+  }, {
+    "name" : "To",
+    "value" : "sss@ddd.org"
+  }, {
+    "name" : "X-OfflineIMAP-1722382714-52656d6f7465-6165727a7465",
+    "value" : "1248516496-0146849121575-v5.99.4"
+  }, {
+    "name" : "Message-ID",
+    "value" : "<8277550.1132283844462.JavaMail.noreply@isrch.de>"
+  }, {
+    "name" : "Mime-Version",
+    "value" : "1.0"
+  }, {
+    "name" : "X-Gmail-Labels",
+    "value" : "ablage,hendrik.yyy@gmx.de"
+  }, {
+    "name" : "X-GM-THRID",
+    "value" : "1309162987234255956"
+  }, {
+    "name" : "Delivered-To",
+    "value" : "GMX delivery to sss@ddd.org"
+  }, {
+    "name" : "Reply-To",
+    "value" : "suchagent@isrch.de"
+  }, {
+    "name" : "Date",
+    "value" : "Fri, 18 Nov 2005 04:17:24 +0100 (MET)"
+  }, {
+    "name" : "Auto-Submitted",
+    "value" : "auto-generated"
+  }, {
+    "name" : "Received",
+    "value" : "(qmail invoked by alias); 18 Nov 2005 03:17:25 -0000"
+  }, {
+    "name" : "Content-Type",
+    "value" : "text/plain; charset=\"ISO-8859-15\""
+  }, {
+    "name" : "From",
+    "value" : "suchagent@isrch.de"
+  } ],
+  "mailboxType" : "IMAP",
+  "popId" : null,
+  "receivedDate" : 1132283845000,
+  "sentDate" : 1132283844000,
+  "size" : 3645,
+  "subject" : "Suchagent Wohnung mieten in Berlin -  1 neues Objekt gefunden!",
+  "textContent" : "Sehr geehrter Nutzer, ... JETZT AUCH IM FERNSEHEN: IMMOBILIENANGEBOTE FÜR HAMBURG UND UMGEBUNG!\r\n\tFinden Sie Ihre Wunschwohnung oder  ..."
+  "to" : [ {
+    "email" : "sss@ddd.org",
+    "personal" : null
+  } ],
+  "uid" : 50220
 }
+    } 
 ```
 
 <h3>License</h3> 
