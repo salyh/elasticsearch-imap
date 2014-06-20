@@ -10,7 +10,7 @@
 	
 	<groupId>de.saly.elasticsearch.plugin</groupId>
 	<artifactId>elasticsearch-river-imap</artifactId>
-	<version>0.0.7-b12</version>
+	<version>0.0.7-b20</version>
 	<packaging>jar</packaging>
 	<description>IMAP river for Elasticsearch</description>
 	<inceptionYear>2014</inceptionYear>
@@ -25,7 +25,7 @@
 	</licenses>
 
 	<properties>
-		<elasticsearch.version>1.1.1</elasticsearch.version>
+		<elasticsearch.version>1.2.1</elasticsearch.version>
 		<github.global.server>github</github.global.server>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
@@ -73,7 +73,7 @@
 		<dependency>
 			<groupId>com.github.tlrx</groupId>
 			<artifactId>elasticsearch-test</artifactId>
-			<version>1.1.0</version>
+			<version>1.2.1</version>
 			<scope>test</scope>
 		</dependency>
 
@@ -81,16 +81,27 @@
 		<dependency>
 			<groupId>de.saly</groupId>
 			<artifactId>javamail-mock2-halfmock</artifactId>
-			<version>0.5-beta3</version>
+			<version>0.5-beta4</version>
 			<scope>test</scope>
 		</dependency>
 
 		<dependency>
+			<groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+			<version>1.2.17</version>
+			<scope>test</scope>
+		</dependency>
+		
+		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
 			<version>1.7.7</version>
-			<scope>test</scope>
-
+			<exclusions>
+				<exclusion>
+					<groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
@@ -139,11 +150,11 @@
 			<version>1.0.0</version>
 		</dependency>
 
-		<dependency>
+		<!--<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-pool2</artifactId>
 			<version>2.2</version>
-		</dependency>
+		</dependency>-->
 
 		<dependency>
 			<groupId>org.quartz-scheduler</groupId>
@@ -170,13 +181,36 @@
 			</resource>
 		</resources>
 		<plugins>
+		
+			<plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>1.3.1</version>
+                <executions>
+                    <execution>
+                        <id>enforce-versions</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>[1.7,)</version>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+		
+		
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.1</version>
 				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
+					<source>1.7</source>
+					<target>1.7</target>
 					<encoding>UTF-8</encoding>
 					<optimize>true</optimize>
 					<showDeprecation>true</showDeprecation>

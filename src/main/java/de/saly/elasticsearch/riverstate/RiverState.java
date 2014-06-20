@@ -41,7 +41,7 @@ public class RiverState {
 
     private long lastTook = -1;
 
-    private long lastUid = 1;
+    private long lastUid = -1;
 
     private Long uidValidity;
 
@@ -132,7 +132,7 @@ public class RiverState {
     }
 
     public void setLastUid(final long lastUid) {
-        this.lastUid = lastUid < 1 ? 1L : lastUid;
+        this.lastUid = lastUid;
     }
 
     public void setUidValidity(final Long uidValidity) {

@@ -38,7 +38,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import javax.mail.Folder;
@@ -82,17 +81,17 @@ public class ParallelPollingPOPMailSource implements MailSource {
     public void close() {
         if (es != null) {
 
-            logger.debug("Initiate shutdown");
+            logger.info("Initiate shutdown");
             es.shutdown();
-            try {
-                if (es.awaitTermination(10, TimeUnit.SECONDS)) {
-                    logger.debug("Shutdown completed gracefully");
+            /*try {
+                if (es.awaitTermination(2, TimeUnit.SECONDS)) {
+                    logger.info("Shutdown completed gracefully");
                 } else {
                     logger.warn("Shutdown completed not gracefully, timeout elapsed");
                 }
             } catch (final InterruptedException e) {
                 logger.warn("Shutdown completed not gracefully, thread interrupted");
-            }
+            }*/
         }
     }
 
@@ -192,7 +191,7 @@ public class ParallelPollingPOPMailSource implements MailSource {
 
                 processedCount += fu.get().processedCount;
             } catch (final Exception e) {
-                logger.error("Unable to process some mails due to {}, will retry ...", e, e.toString());
+                logger.error("Unable to process some mails due to {}", e, e.toString());
             }
         }
 
@@ -222,6 +221,11 @@ public class ParallelPollingPOPMailSource implements MailSource {
                 try {
                     mailDestination.onMessage(m);
                     processedCount++;
+
+                    if (Thread.currentThread().isInterrupted()) {
+                        break;
+                    }
+
                 } catch (final Exception e) {
                     stateManager.onError("Unable to make indexable message", m, e);
                     logger.error("Unable to make indexable message due to {}", e, e.toString());
@@ -376,7 +380,7 @@ public class ParallelPollingPOPMailSource implements MailSource {
 
         if (folder != null) {
 
-            if (es == null || es.isShutdown() || es.isTerminated()) {
+            if (es == null || es.isShutdown() || es.isTerminated() || Thread.currentThread().isInterrupted()) {
 
                 logger.warn("Stop processing of mails due to mail source is closed");
                 return;

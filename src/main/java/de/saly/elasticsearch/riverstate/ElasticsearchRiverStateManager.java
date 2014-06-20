@@ -83,7 +83,7 @@ public class ElasticsearchRiverStateManager implements RiverStateManager {
 
         final RiverState rs = new RiverState();
         rs.setFolderUrl(folder.getURLName().toString());
-        rs.setLastUid(1L);
+        // rs.setLastUid(1L);
         rs.setExists(true);
         return rs;
 

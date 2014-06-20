@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 
+import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -96,11 +97,11 @@ public class ElasticsearchBulkMailDestination extends ElasticsearchMailDestinati
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
 
         super.close();
 
-        while (!isError() && queue.get() > 0) {
+        /*while (!isError() && queue.get() > 0) {
             logger.info("There are {} outstanding bulk messages, will wait until flushed", queue.get());
 
             try {
@@ -109,10 +110,10 @@ public class ElasticsearchBulkMailDestination extends ElasticsearchMailDestinati
                 Thread.currentThread().interrupt();
                 throw new RuntimeException("interrupted", e);
             }
-        }
+        }*/
 
         if (bulk != null) {
-            logger.debug("Shutdown (flush) bulk processor");
+            logger.debug("Shutdown (flush) bulk processor, is super closed " + isClosed());
             bulk.close();
         }
 
@@ -160,8 +161,20 @@ public class ElasticsearchBulkMailDestination extends ElasticsearchMailDestinati
         }
 
         // following block not needs to be synchronized
-        bulk.add(createIndexRequest(imsg));
-        queue.incrementAndGet();
+        try {
+
+            if (!isClosed()) {
+                bulk.add(createIndexRequest(imsg));
+                queue.incrementAndGet();
+            }
+        } catch (final ElasticsearchIllegalStateException e) {
+
+            if (isClosed()) {
+                logger.debug("Bulkprocessing error due to {}", e.toString());
+            } else {
+                logger.error("Bulkprocessing error due to {}", e, e.toString());
+            }
+        }
 
     }
 

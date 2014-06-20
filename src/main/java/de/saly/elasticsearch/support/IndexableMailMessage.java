@@ -184,7 +184,13 @@ public class IndexableMailMessage {
 
         if (p.isMimeType("text/*")) {
 
-            final Object content = p.getContent();
+            Object content = null;
+            try {
+                content = p.getContent();
+            } catch (final Exception e) {
+                logger.error("Unable to index the content of a message due to {}", e.toString());
+                return null;
+            }
 
             if (content instanceof String) {
                 final String s = (String) p.getContent();

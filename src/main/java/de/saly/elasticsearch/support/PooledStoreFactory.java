@@ -25,6 +25,7 @@
  **********************************************************************************************************************/
 package de.saly.elasticsearch.support;
 
+/*
 import java.util.Properties;
 
 import javax.mail.Session;
@@ -72,4 +73,4 @@ public class PooledStoreFactory extends BasePooledObjectFactory<Store> {
         return new DefaultPooledObject<Store>(obj);
     }
 
-}
+}*/

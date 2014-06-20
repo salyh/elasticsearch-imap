@@ -186,21 +186,20 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
 
         try {
             if (sched != null && sched.isStarted()) {
-
-                sched.shutdown(true);
-
+                sched.shutdown();
+                logger.info("Scheduler shutted down");
             }
         } catch (final SchedulerException e) {
             logger.warn("Unable to shutdown scheduler due to " + e, e);
 
         }
 
-        if (mailSource != null) {
-            mailSource.close();
-        }
-
         if (mailDestination != null) {
             mailDestination.close();
+        }
+
+        if (mailSource != null) {
+            mailSource.close();
         }
 
         logger.info("IMAPRiver closed");

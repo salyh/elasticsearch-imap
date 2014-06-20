@@ -105,13 +105,15 @@ public class ElasticsearchMailDestination implements MailDestination {
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
 
         if (closed) {
             return;
         }
 
         closed = true;
+
+        logger.info("Closed");
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -328,6 +330,11 @@ public class ElasticsearchMailDestination implements MailDestination {
             return;
         }
 
+        // see if index already exists
+        if (client.admin().indices().prepareExists(index).execute().actionGet().isExists()) {
+            return;
+        }
+
         final CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(index);
         if (settings != null) {
             createIndexRequestBuilder.setSettings(settings);
@@ -392,11 +399,11 @@ public class ElasticsearchMailDestination implements MailDestination {
         return client;
     }
 
-    protected boolean isClosed() {
+    protected synchronized boolean isClosed() {
         return closed;
     }
 
-    protected boolean isError() {
+    protected synchronized boolean isError() {
         return error;
     }
 
