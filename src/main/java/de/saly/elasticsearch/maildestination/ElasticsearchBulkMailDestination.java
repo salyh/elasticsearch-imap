@@ -153,7 +153,7 @@ public class ElasticsearchBulkMailDestination extends ElasticsearchMailDestinati
         }
 
         final IndexableMailMessage imsg = IndexableMailMessage.fromJavaMailMessage(msg, isWithTextContent(), isWithAttachments(),
-                isStripTagsFromTextContent());
+                isStripTagsFromTextContent(), getHeadersToFields());
 
         if (logger.isTraceEnabled()) {
             logger.trace("Bulk process mail " + imsg.getUid() + "/" + imsg.getPopId() + " :: " + imsg.getSubject() + "/"
