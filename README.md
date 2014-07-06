@@ -275,6 +275,10 @@ Note: For POP3 only the "INBOX" folder is supported. This is a limitation of the
     } 
 ```
 
+<h3>Contributers/Credits</h3> 
+* Hans Jørgen Hoel (https://github.com/hansjorg)
+* Stefan Thies (https://github.com/megastef)
+
 <h3>License</h3> 
 Copyright (C) 2014 by Hendrik Saly (http://saly.de) and others.
 
