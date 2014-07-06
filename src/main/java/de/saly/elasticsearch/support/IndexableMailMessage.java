@@ -31,8 +31,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.mail.BodyPart;
@@ -47,6 +49,7 @@ import javax.mail.internet.InternetAddress;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.codehaus.jackson.annotate.JsonAnyGetter;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
@@ -60,7 +63,7 @@ public class IndexableMailMessage {
     protected static final ESLogger logger = ESLoggerFactory.getLogger(IndexableMailMessage.class.getName());
 
     public static IndexableMailMessage fromJavaMailMessage(final Message jmm, final boolean withTextContent, final boolean withAttachments,
-            final boolean stripTags) throws MessagingException, IOException {
+            final boolean stripTags, List<String> headersToFields) throws MessagingException, IOException {
         final IndexableMailMessage im = new IndexableMailMessage();
 
         @SuppressWarnings("unchecked")
@@ -73,6 +76,8 @@ public class IndexableMailMessage {
         }
 
         im.setHeaders(headerList.toArray(new IndexableHeader[headerList.size()]));
+
+        im.setSelectedHeaders(extractHeaders(im.getHeaders(), headersToFields));
 
         if (jmm.getFolder() instanceof POP3Folder) {
             im.setPopId(((POP3Folder) jmm.getFolder()).getUID(jmm));
@@ -173,6 +178,24 @@ public class IndexableMailMessage {
 
         return im;
     }
+
+    private static Map<String, String> extractHeaders(
+            IndexableHeader[] allHeaders, List<String> headersToFields) {
+
+        Map<String, String> map = new HashMap<>();
+        for(String headerName : headersToFields) {
+            for(IndexableHeader header : allHeaders) {
+                // e-mail headers are case insensitive
+                if(headerName.toLowerCase().equals(header.getName().toLowerCase())) {
+                    String fieldName = "header_" + headerName.replaceAll("[^A-Za-z0-9 ]", "_").toLowerCase();
+                    map.put(fieldName, header.getValue());
+                    break;
+                }
+            }
+        }
+        return map;
+    }
+
 
     private static String getText(final Part p, int depth) throws MessagingException, IOException {
 
@@ -276,6 +299,8 @@ public class IndexableMailMessage {
     private Address from;
 
     private IndexableHeader[] headers;
+
+    private Map<String, String> selectedHeaders;
 
     private String mailboxType;
 
@@ -383,6 +408,11 @@ public class IndexableMailMessage {
         return headers;
     }
 
+    @JsonAnyGetter
+    public Map<String,String> getSelectedHeaders() {
+        return selectedHeaders;
+    }
+
     public String getMailboxType() {
         return mailboxType;
     }
@@ -471,6 +501,10 @@ public class IndexableMailMessage {
 
     public void setHeaders(final IndexableHeader[] headers) {
         this.headers = headers;
+    }
+
+    public void setSelectedHeaders(Map<String, String> selectedHeaders) {
+        this.selectedHeaders = selectedHeaders;
     }
 
     public void setMailboxType(final String mailboxType) {

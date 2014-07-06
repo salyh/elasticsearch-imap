@@ -29,6 +29,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -84,6 +85,8 @@ public class ElasticsearchMailDestination implements MailDestination {
     private boolean withAttachments = false;
 
     private boolean withTextContent = true;
+
+    private List<String> headersToFields;
 
     protected final ESLogger logger = ESLoggerFactory.getLogger(this.getClass().getName());
 
@@ -210,6 +213,10 @@ public class ElasticsearchMailDestination implements MailDestination {
 
     }
 
+    public List<String> getHeadersToFields() {
+        return headersToFields;
+    }
+
     public boolean isStripTagsFromTextContent() {
         return stripTagsFromTextContent;
     }
@@ -239,7 +246,7 @@ public class ElasticsearchMailDestination implements MailDestination {
         }
 
         final IndexableMailMessage imsg = IndexableMailMessage.fromJavaMailMessage(msg, withTextContent, withAttachments,
-                stripTagsFromTextContent);
+                stripTagsFromTextContent, headersToFields);
 
         if (logger.isTraceEnabled()) {
             logger.trace("Process mail " + imsg.getUid() + "/" + imsg.getPopId() + " :: " + imsg.getSubject() + "/" + imsg.getSentDate());
@@ -307,6 +314,11 @@ public class ElasticsearchMailDestination implements MailDestination {
 
     public ElasticsearchMailDestination setWithTextContent(final boolean withTextContent) {
         this.withTextContent = withTextContent;
+        return this;
+    }
+
+    public MailDestination setHeadersToFields(List<String> headersToFields) {
+        this.headersToFields = headersToFields;
         return this;
     }
 

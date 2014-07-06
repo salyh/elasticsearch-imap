@@ -31,6 +31,8 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
@@ -99,6 +101,8 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
 
     private final String user;
 
+    private final List<String> headersToFields;
+
     @Inject
     public IMAPRiver(final RiverName riverName, final RiverSettings riverSettings, final Client client) {
         super(riverName, riverSettings);
@@ -116,6 +120,8 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
         schedule = imapSettings.containsKey("schedule") ? XContentMapValues.nodeStringValue(imapSettings.get("schedule"), null) : null;
 
         interval = XContentMapValues.nodeTimeValue(imapSettings.get("interval"), TimeValue.timeValueMinutes(1));
+
+        headersToFields = arrayNodeToList(imapSettings.get("headers_to_fields"));
 
         final int bulkSize = XContentMapValues.nodeIntegerValue(imapSettings.get("bulk_size"), 100);
         final int maxBulkRequests = XContentMapValues.nodeIntegerValue(imapSettings.get("max_bulk_requests"), 30);
@@ -159,7 +165,7 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
         mailDestination = new ElasticsearchBulkMailDestination().maxBulkActions(bulkSize).maxConcurrentBulkRequests(maxBulkRequests)
                 .flushInterval(flushInterval).client(client).setMapping(typeMapping).setSettings(indexSettings).setType(typeName)
                 .setIndex(indexName).setWithAttachments(withAttachments).setWithTextContent(withTextContent)
-                .setStripTagsFromTextContent(stripTagsFromTextContent);
+                .setStripTagsFromTextContent(stripTagsFromTextContent).setHeadersToFields(headersToFields);
 
         riverStateManager = new ElasticsearchRiverStateManager().client(client).index(indexName);
 
@@ -282,5 +288,19 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
             logger.error("Unable to start IMAPRiver due to " + e, e);
         }
 
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> arrayNodeToList(Object arrayNode) {
+        ArrayList<String> list = new ArrayList<>();
+        if(XContentMapValues.isArray(arrayNode)) {
+            for(Object node : (List<Object>) arrayNode) {
+                String value = XContentMapValues.nodeStringValue(node, null);
+                if(value != null) {
+                    list.add(value);
+                }
+            }
+        }
+        return list;
     }
 }

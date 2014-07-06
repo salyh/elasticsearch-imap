@@ -85,6 +85,7 @@ Prerequisites:
 * ``with_flag_sync`` - IMAP only: if ``true`` then message flag changes will be detected and indexed. Maybe slow for very huge mailboxes. (default: ``true``)
 * ``index_settings`` - optional settings for the Elasticsearch index
 * ``type_mapping`` - optional mapping for the Elasticsearch index type
+* ``headers_to_fields`` - array with e-mail header names to include as proper fields. To create a legal field name, the header name is prefixed with ``header_``, lowercased and has all non-alphanumeric characters replaced with ``_``. For example, an input of ``["Message-ID"]`` will copy that header into a field with name ``header_message_id``.
 
 Note: For POP3 only the "INBOX" folder is supported. This is a limitation of the POP3 protocol.
 
