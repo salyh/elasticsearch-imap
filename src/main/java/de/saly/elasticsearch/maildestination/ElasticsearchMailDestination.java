@@ -342,36 +342,44 @@ public class ElasticsearchMailDestination implements MailDestination {
             return;
         }
 
-        // see if index already exists
-        if (client.admin().indices().prepareExists(index).execute().actionGet().isExists()) {
-            return;
+        // create index if it doesn't already exist
+        if (!client.admin().indices().prepareExists(index).execute().actionGet().isExists()) {
+    
+            final CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(index);
+            if (settings != null) {
+                createIndexRequestBuilder.setSettings(settings);
+            }
+            if (mapping != null) {
+                createIndexRequestBuilder.addMapping(type, mapping);
+            }
+            
+            final CreateIndexResponse res = createIndexRequestBuilder.get();
+            logger.info("Index {} created? {}", index, res.isAcknowledged());
+        } else {
+            logger.debug("Index {} already exists.", index);
         }
-
-        final CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(index);
-        if (settings != null) {
-            createIndexRequestBuilder.setSettings(settings);
-        }
-        if (mapping != null) {
-            createIndexRequestBuilder.addMapping(type, mapping);
-        }
-
-        final XContentBuilder mappingBuilder = jsonBuilder().startObject().startObject(type).startObject("properties")
-                .startObject("folderFullName").field("index", "not_analyzed").field("type", "string").endObject()
-                .startObject("receivedDate").field("type", "date").field("format", "basic_date_time").endObject().startObject("sentDate")
-                .field("type", "date").field("format", "basic_date_time").endObject().startObject("flaghashcode").field("type", "integer")
-                .endObject()
-                // .startObject("attachments").startObject("properties").startObject("content").field("type",
-                // "attachment").endObject().endObject().endObject()
-                .endObject().endObject().endObject();
-
-        final CreateIndexResponse res = createIndexRequestBuilder.get();
-        logger.info("Index {} and typemapping for {} created? {}", index, type, res.isAcknowledged());
-
-        final PutMappingResponse response = client.admin().indices().preparePutMapping(index).setType(type).setSource(mappingBuilder)
-                .execute().actionGet();
-
-        if (!response.isAcknowledged()) {
-            throw new IOException("Could not define mapping for type [" + index + "]/[" + type + "].");
+        
+        // create typemapping if it doesn't already exist
+        if (!client.admin().indices().prepareTypesExists(index).setTypes(type).execute().actionGet().isExists()) {
+        
+            final XContentBuilder mappingBuilder = jsonBuilder().startObject().startObject(type).startObject("properties")
+                    .startObject("folderFullName").field("index", "not_analyzed").field("type", "string").endObject()
+                    .startObject("receivedDate").field("type", "date").field("format", "basic_date_time").endObject().startObject("sentDate")
+                    .field("type", "date").field("format", "basic_date_time").endObject().startObject("flaghashcode").field("type", "integer")
+                    .endObject()
+                    // .startObject("attachments").startObject("properties").startObject("content").field("type",
+                    // "attachment").endObject().endObject().endObject()
+                    .endObject().endObject().endObject();
+            
+            final PutMappingResponse response = client.admin().indices().preparePutMapping(index).setType(type).setSource(mappingBuilder)
+                    .execute().actionGet();
+            logger.info("Typemapping {} created? {}", type, response.isAcknowledged());
+    
+            if (!response.isAcknowledged()) {
+                throw new IOException("Could not define mapping for type [" + index + "]/[" + type + "].");
+            }
+        } else {
+            logger.debug("Typemapping {} already exists.", type);
         }
 
     }
