@@ -275,6 +275,11 @@ Note: For POP3 only the "INBOX" folder is supported. This is a limitation of the
     } 
 ```
 
+<h3>Indexing attachments</h3> 
+If you want also indexing your mail attachments follow instructions here:
+https://github.com/salyh/elasticsearch-river-imap/issues/10#issuecomment-50125929
+
+
 <h3>Contributers/Credits</h3> 
 * Hans Jørgen Hoel (https://github.com/hansjorg)
 * Stefan Thies (https://github.com/megastef)
