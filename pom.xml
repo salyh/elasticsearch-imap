@@ -10,7 +10,7 @@
 	
 	<groupId>de.saly.elasticsearch.plugin</groupId>
 	<artifactId>elasticsearch-river-imap</artifactId>
-	<version>0.0.8</version>
+	<version>0.3</version>
 	<packaging>jar</packaging>
 	<description>IMAP (and POP3) river for Elasticsearch</description>
 	<inceptionYear>2014</inceptionYear>

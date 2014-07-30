@@ -25,15 +25,15 @@ The river acts currently as a disconnected client. This means that the river is 
 At a later time is planned to use additionally the IMAP IDLE feature (if server supports it).
 
 Branches:
-* master for Elasticsearch 1.2.1
+* master for Elasticsearch 1.2.x/1.3.x
 
 <h3>Installation</h3> 
 Prerequisites:
 * Open JDK 7 or Oracle 7 JRE (Java 6 is no longer supported and Java 8 is untested)
-* Elasticsearch 1.2.1 or higher
+* Elasticsearch 1.2-1.3 or higher
 * At least one IMAP4 or POP3 server to connect to
 
-``plugin.sh|.bat -i river-imap -u http://dl.bintray.com/salyh/maven/de/saly/elasticsearch/plugin/elasticsearch-river-imap/0.0.7-b20/elasticsearch-river-imap-0.0.7-b20-plugin.zip``
+``plugin.sh|.bat -i river-imap -u http://dl.bintray.com/salyh/maven/de/saly/elasticsearch/plugin/elasticsearch-river-imap/0.3/elasticsearch-river-imap-0.3-plugin.zip``
 
 <h3>Configuration</h3>
 <pre>curl -XPUT 'http://localhost:9200/_river/nameofyourriver/_meta' -d '{
