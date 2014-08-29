@@ -124,7 +124,7 @@ public class IndexableMailMessage {
 
             // try {
 
-            String textContent = getText(jmm, 0, false);
+            String textContent = getText(jmm, 0, preferHtmlContent);
 
             if (stripTags) {
                 textContent = stripTags(textContent);
@@ -141,7 +141,7 @@ public class IndexableMailMessage {
 
             // try {
 
-            String htmlContent = getText(jmm, 0, preferHtmlContent);
+            String htmlContent = getText(jmm, 0, true);
 
             im.setHtmlContent(htmlContent);
             // } catch (final Exception e) {
