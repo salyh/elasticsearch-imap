@@ -267,7 +267,9 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
                 logger.error("folderpattern is invalid due to {}", e, e.toString());
             }
 
-            final JobDetail job = newJob(MailFlowJob.class).withIdentity(riverName + "-" + props.hashCode(), "group1").usingJobData(jdm)
+            final String group = "group_" + riverName + "-" + props.hashCode();
+
+            final JobDetail job = newJob(MailFlowJob.class).withIdentity(riverName + "-" + props.hashCode(), group).usingJobData(jdm)
                     .build();
 
             Trigger trigger = null;
@@ -275,13 +277,13 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
             if (StringUtils.isEmpty(schedule)) {
                 logger.info("Trigger interval is every {} seconds", interval.seconds());
 
-                trigger = newTrigger().withIdentity("intervaltrigger", "group1").startNow()
+                trigger = newTrigger().withIdentity("intervaltrigger", group).startNow()
                         .withSchedule(simpleSchedule().withIntervalInSeconds((int) interval.seconds()).repeatForever()).build();
             } else {
 
                 logger.info("Trigger follows cron pattern {}", schedule);
 
-                trigger = newTrigger().withIdentity("crontrigger", "group1").withSchedule(cronSchedule(schedule)).build();
+                trigger = newTrigger().withIdentity("crontrigger", group).withSchedule(cronSchedule(schedule)).build();
             }
 
             sched.scheduleJob(job, trigger);
