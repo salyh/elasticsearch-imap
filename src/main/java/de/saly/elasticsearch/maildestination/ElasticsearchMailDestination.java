@@ -86,6 +86,8 @@ public class ElasticsearchMailDestination implements MailDestination {
 
     private boolean withTextContent = true;
 
+    private boolean withHtmlContent = false;
+
     private boolean preferHtmlContent = false;
 
     private List<String> headersToFields;
@@ -231,6 +233,10 @@ public class ElasticsearchMailDestination implements MailDestination {
         return withTextContent;
     }
 
+    public boolean isWithHtmlContent() {
+        return withHtmlContent;
+    }
+
     public boolean isPreferHtmlContent() {
         return preferHtmlContent;
     }
@@ -251,7 +257,7 @@ public class ElasticsearchMailDestination implements MailDestination {
             return;
         }
 
-        final IndexableMailMessage imsg = IndexableMailMessage.fromJavaMailMessage(msg, withTextContent, preferHtmlContent, withAttachments,
+        final IndexableMailMessage imsg = IndexableMailMessage.fromJavaMailMessage(msg, withTextContent, withHtmlContent, preferHtmlContent, withAttachments,
                 stripTagsFromTextContent, headersToFields);
 
         if (logger.isTraceEnabled()) {
@@ -320,6 +326,11 @@ public class ElasticsearchMailDestination implements MailDestination {
 
     public ElasticsearchMailDestination setWithTextContent(final boolean withTextContent) {
         this.withTextContent = withTextContent;
+        return this;
+    }
+
+    public ElasticsearchMailDestination setWithHtmlContent(final boolean withHtmlContent) {
+        this.withHtmlContent = withHtmlContent;
         return this;
     }
 

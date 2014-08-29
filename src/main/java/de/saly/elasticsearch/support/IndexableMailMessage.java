@@ -62,7 +62,7 @@ public class IndexableMailMessage {
 
     protected static final ESLogger logger = ESLoggerFactory.getLogger(IndexableMailMessage.class.getName());
 
-    public static IndexableMailMessage fromJavaMailMessage(final Message jmm, final boolean withTextContent, final boolean preferHtmlContent, final boolean withAttachments,
+    public static IndexableMailMessage fromJavaMailMessage(final Message jmm, final boolean withTextContent, final boolean withHtmlContent, final boolean preferHtmlContent, final boolean withAttachments,
             final boolean stripTags, List<String> headersToFields) throws MessagingException, IOException {
         final IndexableMailMessage im = new IndexableMailMessage();
 
@@ -124,13 +124,26 @@ public class IndexableMailMessage {
 
             // try {
 
-            String textContent = getText(jmm, 0, preferHtmlContent);
+            String textContent = getText(jmm, 0, false);
 
             if (stripTags) {
                 textContent = stripTags(textContent);
             }
 
             im.setTextContent(textContent);
+            // } catch (final Exception e) {
+            // logger.error("Unable to retrieve text content for message {} due to {}",
+            // e, ((MimeMessage) jmm).getMessageID(), e);
+            // }
+        }
+
+        if (withHtmlContent) { 
+
+            // try {
+
+            String htmlContent = getText(jmm, 0, preferHtmlContent);
+
+            im.setHtmlContent(htmlContent);
             // } catch (final Exception e) {
             // logger.error("Unable to retrieve text content for message {} due to {}",
             // e, ((MimeMessage) jmm).getMessageID(), e);
@@ -324,6 +337,8 @@ public class IndexableMailMessage {
 
     private String textContent;
 
+    private String htmlContent;
+
     private Address[] to;
 
     private long uid;
@@ -447,6 +462,10 @@ public class IndexableMailMessage {
         return textContent;
     }
 
+    public String getHtmlContent() {
+        return htmlContent;
+    }
+
     public Address[] getTo() {
         return to;
     }
@@ -540,6 +559,11 @@ public class IndexableMailMessage {
     public void setTextContent(final String textContent) {
 
         this.textContent = textContent;
+    }
+
+    public void setHtmlContent(final String htmlContent) {
+
+        this.htmlContent = htmlContent;
     }
 
     public void setTo(final Address[] to) {

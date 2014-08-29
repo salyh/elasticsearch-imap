@@ -133,6 +133,8 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
 
         final boolean withTextContent = XContentMapValues.nodeBooleanValue(imapSettings.get("with_text_content"), true);
 
+        final boolean withHtmlContent = XContentMapValues.nodeBooleanValue(imapSettings.get("with_html_content"), false);
+
         final boolean preferHtmlContent = XContentMapValues.nodeBooleanValue(imapSettings.get("prefer_html_content"), false);
 
         final boolean withFlagSync = XContentMapValues.nodeBooleanValue(imapSettings.get("with_flag_sync"), true);
@@ -166,8 +168,8 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
 
         mailDestination = new ElasticsearchBulkMailDestination().maxBulkActions(bulkSize).maxConcurrentBulkRequests(maxBulkRequests)
                 .flushInterval(flushInterval).client(client).setMapping(typeMapping).setSettings(indexSettings).setType(typeName)
-                .setIndex(indexName).setWithAttachments(withAttachments).setWithTextContent(withTextContent).setPreferHtmlContent(preferHtmlContent)
-                .setStripTagsFromTextContent(stripTagsFromTextContent).setHeadersToFields(headersToFields);
+                .setIndex(indexName).setWithAttachments(withAttachments).setWithTextContent(withTextContent).setWithHtmlContent(withHtmlContent)
+                .setPreferHtmlContent(preferHtmlContent).setStripTagsFromTextContent(stripTagsFromTextContent).setHeadersToFields(headersToFields);
 
         riverStateManager = new ElasticsearchRiverStateManager().client(client).index(indexName);
 
