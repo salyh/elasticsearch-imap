@@ -190,6 +190,10 @@ Note: For POP3 only the "INBOX" folder is supported. This is a limitation of the
     }
 ```
 
+For advanced mapping ideas look here:
+* https://github.com/salyh/elasticsearch-river-imap/issues/4
+* https://github.com/salyh/elasticsearch-river-imap/issues/13
+
 <h3>Content Example</h3>
 ```json
 {
@@ -276,9 +280,11 @@ Note: For POP3 only the "INBOX" folder is supported. This is a limitation of the
 ```
 
 <h3>Indexing attachments</h3> 
-If you want also indexing your mail attachments follow instructions here:
-https://github.com/salyh/elasticsearch-river-imap/issues/10#issuecomment-50125929
-
+If you want also indexing your mail attachments follow look here:
+* https://github.com/salyh/elasticsearch-river-imap/issues/10#issuecomment-50125929
+* https://github.com/salyh/elasticsearch-river-imap/issues/13
+* http://tinyurl.com/nbujv7h
+* https://github.com/salyh/elasticsearch-river-imap/blob/master/src/test/java/de/saly/elasticsearch/imap/AttachmentMapperTest.java
 
 <h3>Contributers/Credits</h3> 
 * Hans Jørgen Hoel (https://github.com/hansjorg)
