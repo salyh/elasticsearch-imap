@@ -152,7 +152,7 @@ public class ElasticsearchBulkMailDestination extends ElasticsearchMailDestinati
             return;
         }
 
-        final IndexableMailMessage imsg = IndexableMailMessage.fromJavaMailMessage(msg, isWithTextContent(), isWithAttachments(),
+        final IndexableMailMessage imsg = IndexableMailMessage.fromJavaMailMessage(msg, isWithTextContent(), isWithHtmlContent(), isPreferHtmlContent(), isWithAttachments(),
                 isStripTagsFromTextContent(), getHeadersToFields());
 
         if (logger.isTraceEnabled()) {

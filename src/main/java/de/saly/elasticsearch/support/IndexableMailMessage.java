@@ -62,7 +62,7 @@ public class IndexableMailMessage {
 
     protected static final ESLogger logger = ESLoggerFactory.getLogger(IndexableMailMessage.class.getName());
 
-    public static IndexableMailMessage fromJavaMailMessage(final Message jmm, final boolean withTextContent, final boolean withAttachments,
+    public static IndexableMailMessage fromJavaMailMessage(final Message jmm, final boolean withTextContent, final boolean withHtmlContent, final boolean preferHtmlContent, final boolean withAttachments,
             final boolean stripTags, List<String> headersToFields) throws MessagingException, IOException {
         final IndexableMailMessage im = new IndexableMailMessage();
 
@@ -124,13 +124,26 @@ public class IndexableMailMessage {
 
             // try {
 
-            String textContent = getText(jmm, 0);
+            String textContent = getText(jmm, 0, preferHtmlContent);
 
             if (stripTags) {
                 textContent = stripTags(textContent);
             }
 
             im.setTextContent(textContent);
+            // } catch (final Exception e) {
+            // logger.error("Unable to retrieve text content for message {} due to {}",
+            // e, ((MimeMessage) jmm).getMessageID(), e);
+            // }
+        }
+
+        if (withHtmlContent) { 
+
+            // try {
+
+            String htmlContent = getText(jmm, 0, true);
+
+            im.setHtmlContent(htmlContent);
             // } catch (final Exception e) {
             // logger.error("Unable to retrieve text content for message {} due to {}",
             // e, ((MimeMessage) jmm).getMessageID(), e);
@@ -197,7 +210,7 @@ public class IndexableMailMessage {
     }
 
 
-    private static String getText(final Part p, int depth) throws MessagingException, IOException {
+    private static String getText(final Part p, int depth, final boolean preferHtmlContent) throws MessagingException, IOException {
 
         if (depth >= 100) {
             throw new IOException("Endless recursion detected ");
@@ -244,23 +257,29 @@ public class IndexableMailMessage {
                 final Part bp = mp.getBodyPart(i);
                 if (bp.isMimeType("text/html")) {
                     if (text == null) {
-                        text = getText(bp, ++depth);
+                        text = getText(bp, ++depth, preferHtmlContent);
                     }
-                    continue;
+		    if (preferHtmlContent) {
+                        return text;
+                    } else {
+                        continue;
+                    }
                 } else if (bp.isMimeType("text/plain")) {
-                    final String s = getText(bp, ++depth);
-                    if (s != null) {
+                    final String s = getText(bp, ++depth, preferHtmlContent);
+                    if (s != null && !preferHtmlContent) {
                         return s;
+                    } else {
+                        continue;
                     }
                 } else {
-                    return getText(bp, ++depth);
+                    return getText(bp, ++depth, preferHtmlContent);
                 }
             }
             return text;
         } else if (p.isMimeType("multipart/*")) {
             final Multipart mp = (Multipart) p.getContent();
             for (int i = 0; i < mp.getCount(); i++) {
-                final String s = getText(mp.getBodyPart(i), ++depth);
+                final String s = getText(mp.getBodyPart(i), ++depth, preferHtmlContent);
                 if (s != null) {
                     return s;
                 }
@@ -317,6 +336,8 @@ public class IndexableMailMessage {
     private String subject;
 
     private String textContent;
+
+    private String htmlContent;
 
     private Address[] to;
 
@@ -441,6 +462,10 @@ public class IndexableMailMessage {
         return textContent;
     }
 
+    public String getHtmlContent() {
+        return htmlContent;
+    }
+
     public Address[] getTo() {
         return to;
     }
@@ -534,6 +559,11 @@ public class IndexableMailMessage {
     public void setTextContent(final String textContent) {
 
         this.textContent = textContent;
+    }
+
+    public void setHtmlContent(final String htmlContent) {
+
+        this.htmlContent = htmlContent;
     }
 
     public void setTo(final Address[] to) {

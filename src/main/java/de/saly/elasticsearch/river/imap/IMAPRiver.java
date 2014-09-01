@@ -133,6 +133,10 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
 
         final boolean withTextContent = XContentMapValues.nodeBooleanValue(imapSettings.get("with_text_content"), true);
 
+        final boolean withHtmlContent = XContentMapValues.nodeBooleanValue(imapSettings.get("with_html_content"), false);
+
+        final boolean preferHtmlContent = XContentMapValues.nodeBooleanValue(imapSettings.get("prefer_html_content"), false);
+
         final boolean withFlagSync = XContentMapValues.nodeBooleanValue(imapSettings.get("with_flag_sync"), true);
 
         final boolean withAttachments = XContentMapValues.nodeBooleanValue(imapSettings.get("with_attachments"), false);
@@ -164,8 +168,8 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
 
         mailDestination = new ElasticsearchBulkMailDestination().maxBulkActions(bulkSize).maxConcurrentBulkRequests(maxBulkRequests)
                 .flushInterval(flushInterval).client(client).setMapping(typeMapping).setSettings(indexSettings).setType(typeName)
-                .setIndex(indexName).setWithAttachments(withAttachments).setWithTextContent(withTextContent)
-                .setStripTagsFromTextContent(stripTagsFromTextContent).setHeadersToFields(headersToFields);
+                .setIndex(indexName).setWithAttachments(withAttachments).setWithTextContent(withTextContent).setWithHtmlContent(withHtmlContent)
+                .setPreferHtmlContent(preferHtmlContent).setStripTagsFromTextContent(stripTagsFromTextContent).setHeadersToFields(headersToFields);
 
         riverStateManager = new ElasticsearchRiverStateManager().client(client).index(indexName);
 
@@ -263,7 +267,9 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
                 logger.error("folderpattern is invalid due to {}", e, e.toString());
             }
 
-            final JobDetail job = newJob(MailFlowJob.class).withIdentity(riverName + "-" + props.hashCode(), "group1").usingJobData(jdm)
+            final String group = "group_" + riverName + "-" + props.hashCode();
+
+            final JobDetail job = newJob(MailFlowJob.class).withIdentity(riverName + "-" + props.hashCode(), group).usingJobData(jdm)
                     .build();
 
             Trigger trigger = null;
@@ -271,13 +277,13 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
             if (StringUtils.isEmpty(schedule)) {
                 logger.info("Trigger interval is every {} seconds", interval.seconds());
 
-                trigger = newTrigger().withIdentity("intervaltrigger", "group1").startNow()
+                trigger = newTrigger().withIdentity("intervaltrigger", group).startNow()
                         .withSchedule(simpleSchedule().withIntervalInSeconds((int) interval.seconds()).repeatForever()).build();
             } else {
 
                 logger.info("Trigger follows cron pattern {}", schedule);
 
-                trigger = newTrigger().withIdentity("crontrigger", "group1").withSchedule(cronSchedule(schedule)).build();
+                trigger = newTrigger().withIdentity("crontrigger", group).withSchedule(cronSchedule(schedule)).build();
             }
 
             sched.scheduleJob(job, trigger);
