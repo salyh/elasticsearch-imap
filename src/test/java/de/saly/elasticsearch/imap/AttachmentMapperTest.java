@@ -80,7 +80,7 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 		IMAPUtils.close(store);
 
 		//let the river index
-		Thread.sleep(10*1000);
+		Thread.sleep(20*1000);
 
 		esSetup.client().admin().indices().refresh(new RefreshRequest()).actionGet();
 
@@ -157,7 +157,7 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 
 
 		//let the river index
-		Thread.sleep(10*1000);
+		Thread.sleep(20*1000);
 
 		esSetup.client().admin().indices().refresh(new RefreshRequest()).actionGet();
 
