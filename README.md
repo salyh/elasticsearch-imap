@@ -194,6 +194,47 @@ For advanced mapping ideas look here:
 * https://github.com/salyh/elasticsearch-river-imap/issues/4
 * https://github.com/salyh/elasticsearch-river-imap/issues/13
 
+<h3>Advanced Mapping Example (to be set manually using "type_mapping")</h3>
+```json
+{
+   "mail":{
+      "properties":{
+         "textContent":{
+            "type":"langdetect"
+         },
+         "email":{
+            "type":"string",
+            "index":"not_analyzed"
+         },
+         "subject":{
+            "type":"multi_field",
+            "fields":{
+               "text":{
+                  "type":"string"
+               },
+               "raw":{
+                  "type":"string",
+                  "index":"not_analyzed"
+               }
+            }
+         },
+         "personal":{
+            "type":"multi_field",
+            "fields":{
+               "title":{
+                  "type":"string"
+               },
+               "raw":{
+                  "type":"string",
+                  "index":"not_analyzed"
+               }
+            }
+         }
+      }
+   }
+} 
+```
+
 <h3>Content Example</h3>
 ```json
 {
