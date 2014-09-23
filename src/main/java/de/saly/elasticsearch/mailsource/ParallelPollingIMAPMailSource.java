@@ -46,6 +46,7 @@ import javax.mail.Store;
 import javax.mail.UIDFolder;
 import javax.mail.internet.MimeMessage;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
@@ -366,11 +367,14 @@ public class ParallelPollingIMAPMailSource implements MailSource {
 
                 logger.debug("highestUID: {}", highestUID);
 
-                final Message[] msgsnew = uidfolder.getMessagesByUID(highestUID, UIDFolder.LASTUID);
+                Message[] msgsnew = uidfolder.getMessagesByUID(highestUID+1, UIDFolder.LASTUID);
 
-                // msgnew.size is always >= 1
-                if (highestUID > 0 && uidfolder.getUID(msgsnew[0]) <= highestUID) {
-                    // msgsnew = (Message[]) ArrayUtils.remove(msgsnew, 0);
+                logger.debug("msg count for UID >= {}: {}", highestUID+1, msgsnew.length);
+                
+                // msgnew.size is always >= 1 if folder is not empty
+                if (msgsnew.length > 0 && uidfolder.getUID(msgsnew[msgsnew.length-1]) <= highestUID) {
+                    logger.debug("will not process UID {}, because already processed", uidfolder.getUID(msgsnew[msgsnew.length-1]));
+                    msgsnew = (Message[]) ArrayUtils.remove(msgsnew, msgsnew.length-1);
                 }
 
                 if (msgsnew.length > 0) {
@@ -400,7 +404,7 @@ public class ParallelPollingIMAPMailSource implements MailSource {
                     riverState.setUidValidity(servervalidity);
                     stateManager.setRiverState(riverState);
 
-                    logger.info("Not initiailly processed {} mails for folder {}", result.getProcessedCount(), folder.getFullName());
+                    logger.info("Processed {} mails for folder {}", result.getProcessedCount(), folder.getFullName());
                     logger.debug("Processed result {}", result.toString());
                 } else {
                     logger.debug("no new messages");
@@ -509,7 +513,7 @@ public class ParallelPollingIMAPMailSource implements MailSource {
             }*/
 
             if (pattern != null && !isRoot && !pattern.matcher(folder.getFullName()).matches()) {
-                logger.info(folder.getFullName() + " does not match pattern " + pattern.toString());
+                logger.debug(folder.getFullName() + " does not match pattern " + pattern.toString());
                 return;
             }
 
