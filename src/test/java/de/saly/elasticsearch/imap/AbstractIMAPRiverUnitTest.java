@@ -48,6 +48,7 @@ import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.count.CountRequest;
 import org.elasticsearch.action.count.CountResponse;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
@@ -55,6 +56,7 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.ImmutableSettings.Builder;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.river.RiverSettings;
+import org.elasticsearch.search.SearchHit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -86,6 +88,8 @@ public abstract class AbstractIMAPRiverUnitTest {
     protected AbstractIMAPRiverUnitTest() {
         super();
 
+        System.setProperty("java.net.preferIPv4Stack","true");
+        
         settingsBuilder = ImmutableSettings
                 .settingsBuilder()
                 // .put(NODE_NAME, elasticsearchNode.name())
@@ -263,16 +267,27 @@ public abstract class AbstractIMAPRiverUnitTest {
             message.setSentDate(new Date());
             MockMailbox.get(EMAIL_USER_ADDRESS).getInbox().add(message);
         }
-
+        
         logger.info("Putted " + messages + " into mailbox");
     }
 
     protected void registerRiver(final String typename, final String file) throws ElasticsearchException, IOException {
-        final IndexResponse res = esSetup.client().prepareIndex().setIndex("_river").setType(typename).setId("_meta")
+        final IndexResponse res = esSetup.client().prepareIndex().setRefresh(true).setIndex("_river").setType(typename).setId("_meta")
                 .setSource(loadFile(file)).execute().actionGet();
         if (!res.isCreated()) {
             throw new IOException("Unable to register river");
         }
+    }
+    
+    protected SearchHit statusRiver(final String index) throws ElasticsearchException, IOException {
+        SearchResponse res = esSetup.client().prepareSearch(index).setTypes("imapriverstate").execute().actionGet();
+        if(res.getHits() != null && res.getHits().getHits() != null && res.getHits().getHits().length > 0) {
+            return res.getHits().getHits()[0];
+        }
+        
+        return null;
+        
+        
     }
 
     protected void renameMailbox(final Properties props, final String folderName, final String user, final String password)

@@ -272,5 +272,22 @@ public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTes
         Assert.assertEquals(28, getCount(indexName, typeName));
 
     }
+    
+    protected void twoRiversScenario(final String resource1, final String resource2) throws Exception {
+
+        final RiverSettings settings1 = riverSettings("/" + resource1);
+        final RiverSettings settings2 = riverSettings("/" + resource2);
+        
+        putMailInMailbox(5);
+        
+        registerRiver("firstriver", resource1);
+        Thread.sleep(500);
+        registerRiver("secondriver", resource2);
+        Thread.sleep(6000);
+         
+        Assert.assertNotNull(statusRiver(XContentMapValues.nodeStringValue(settings1.settings().get("mail_index_name"), null)));
+        Assert.assertNotNull(statusRiver(XContentMapValues.nodeStringValue(settings2.settings().get("mail_index_name"), null)));
+       
+    }
 
 }

@@ -84,6 +84,12 @@ public class RiverPopImapTestCase extends AbstractIMAPRiverScenario {
         plainScenario("river-pop3-1.json");
 
     }
+    
+    @Test
+    public void testPopTwoRiversScenario() throws Exception {
+        twoRiversScenario("river-pop3-1.json","river-pop3-2.json");
+
+    }
 
     @Test
     public void testPopPlainScenarioOnce() throws Exception {

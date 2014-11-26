@@ -152,7 +152,8 @@ public class ParallelPollingIMAPMailSource implements MailSource {
 
         final long startTime = System.currentTimeMillis();
 
-        final int netCount = messageCount - (start == 1 ? 0 : start);
+        //final int netCount = messageCount - (start == 1 ? 0 : start);
+        final int netCount = messageCount - (start == 1 ? 0 : start) + 1; //fixed #15
 
         logger.debug("netCount: {}", netCount);
 

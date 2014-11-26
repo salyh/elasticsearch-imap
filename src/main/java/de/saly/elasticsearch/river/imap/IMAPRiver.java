@@ -250,10 +250,10 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
             sched = StdSchedulerFactory.getDefaultScheduler();
 
             if (sched.isShutdown()) {
-                logger.error("Scheduler already down");
+                throw new Exception("Scheduler already down");
             }
             if (sched.isStarted()) {
-                logger.error("Scheduler already started");
+                logger.debug("Scheduler already running");
             }
 
             final JobDataMap jdm = new JobDataMap();
@@ -264,12 +264,12 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
                     jdm.put("pattern", Pattern.compile(folderPattern));
                 }
             } catch (final PatternSyntaxException e) {
-                logger.error("folderpattern is invalid due to {}", e, e.toString());
+                throw new Exception("folderpattern is invalid due to " + e, e);
             }
 
-            final String group = "group_" + riverName + "-" + props.hashCode();
+            final String group = "group_" + riverName.getName() + "-" + props.hashCode();
 
-            final JobDetail job = newJob(MailFlowJob.class).withIdentity(riverName + "-" + props.hashCode(), group).usingJobData(jdm)
+            final JobDetail job = newJob(MailFlowJob.class).withIdentity(riverName.getName() + "-" + props.hashCode(), group).usingJobData(jdm)
                     .build();
 
             Trigger trigger = null;
@@ -291,7 +291,7 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
             logger.info("IMAPRiver started");
 
         } catch (final Exception e) {
-            logger.error("Unable to start IMAPRiver due to " + e, e);
+            logger.error("Unable to start IMAPRiver '"+riverName.getName()+"' due to " + e, e);
         }
 
     }
