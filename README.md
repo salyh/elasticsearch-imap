@@ -8,7 +8,7 @@ IMAP (and POP3) river for Elasticsearch
 <a href="mailto:hendrikdev22@gmail.com">E-Mail hendrikdev22@gmail.com</a><p>
 <a href="https://twitter.com/hendrikdev22">Twitter @hendrikdev22</a>
 
-This river connects to IMAP4 or POP3 servers polls your mail and index it. The emails on the server will be never modified or removed from the server.
+This river connects to IMAP4 or POP3 servers, poll your mail and index it. The emails on the server will be never modified or removed from the server.
 The river tracks (after the first initial full load) which mails are new or deleted and then only update the index for this mails.
 
 Features:
@@ -21,19 +21,18 @@ Features:
 * No special server capabilities needed
 * Bulk indexing
 
-The river acts currently as a disconnected client. This means that the river is polling and for every indexing run a new server connections are opened and, after work is done, closed.
-At a later time is planned to use additionally the IMAP IDLE feature (if server supports it).
+The river acts currently as a disconnected client. This means that the river is polling and for every indexing run a new server connection is opened and, after work is done, closed.
 
 Branches:
-* master for Elasticsearch 1.2.x/1.3.x
+* master for Elasticsearch 1.2.x/1.3.x/1.4.x
 
 <h3>Installation</h3> 
 Prerequisites:
-* Open JDK 7 or Oracle 7 JRE (Java 6 is no longer supported and Java 8 is untested)
-* Elasticsearch 1.2-1.3 or higher
+* Java 7 or 8
+* Elasticsearch 1.2 or higher
 * At least one IMAP4 or POP3 server to connect to
 
-``plugin.sh|.bat -i river-imap -u http://dl.bintray.com/salyh/maven/de/saly/elasticsearch/plugin/elasticsearch-river-imap/0.3/elasticsearch-river-imap-0.3-plugin.zip``
+``plugin.sh|.bat -i river-imap -u http://dl.bintray.com/salyh/maven/de/saly/elasticsearch/plugin/elasticsearch-river-imap/0.4/elasticsearch-river-imap-0.4-plugin.zip``
 
 <h3>Configuration</h3>
 <pre>curl -XPUT 'http://localhost:9200/_river/nameofyourriver/_meta' -d '{
@@ -321,7 +320,7 @@ For advanced mapping ideas look here:
 ```
 
 <h3>Indexing attachments</h3> 
-If you want also indexing your mail attachments follow look here:
+If you want also indexing your mail attachments look here:
 * https://github.com/salyh/elasticsearch-river-imap/issues/10#issuecomment-50125929
 * https://github.com/salyh/elasticsearch-river-imap/issues/13
 * http://tinyurl.com/nbujv7h

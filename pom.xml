@@ -10,7 +10,7 @@
 	
 	<groupId>de.saly.elasticsearch.plugin</groupId>
 	<artifactId>elasticsearch-river-imap</artifactId>
-	<version>0.4-SNAPSHOT</version>
+	<version>0.4</version>
 	<packaging>jar</packaging>
 	<description>IMAP (and POP3) river for Elasticsearch</description>
 	<inceptionYear>2014</inceptionYear>
@@ -345,7 +345,7 @@
 			<plugin>
                 <groupId>com.github.github</groupId>
                 <artifactId>site-maven-plugin</artifactId>
-                <version>0.9</version>
+                <version>0.10</version>
                 <configuration>
                     <message>Building site for ${project.version}</message>
                 </configuration>
