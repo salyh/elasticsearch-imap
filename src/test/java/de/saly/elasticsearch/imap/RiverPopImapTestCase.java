@@ -54,11 +54,11 @@ public class RiverPopImapTestCase extends AbstractIMAPRiverScenario {
 
     }
 
-    @Test
+    /*@Test
     public void testImapPlainScenarioInvalidFolderPattern() throws Exception {
         plainScenario("river-imaps-invpattern.json");
 
-    }
+    }*/
 
     @Test
     public void testImapPlainScenarioOnce() throws Exception {
