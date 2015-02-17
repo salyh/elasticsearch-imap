@@ -66,6 +66,7 @@ public class ParallelPollingIMAPMailSource implements MailSource {
     private final int threadCount;
     private final String user;
     private boolean withFlagSync = true;
+    private boolean deleteExpungedMessages = true;
     protected final ESLogger logger = ESLoggerFactory.getLogger(this.getClass().getName());
 
     public ParallelPollingIMAPMailSource(final Properties props, final int threadCount, final String user, final String password) {
@@ -145,6 +146,11 @@ public class ParallelPollingIMAPMailSource implements MailSource {
 
     public ParallelPollingIMAPMailSource setWithFlagSync(final boolean withFlagSync) {
         this.withFlagSync = withFlagSync;
+        return this;
+    }
+    
+    public ParallelPollingIMAPMailSource setDeleteExpungedMessages(final boolean deleteExpungedMessages) {
+        this.deleteExpungedMessages = deleteExpungedMessages;
         return this;
     }
 
@@ -432,16 +438,20 @@ public class ParallelPollingIMAPMailSource implements MailSource {
                 }
             }
 
-            final Set localMailSet = new HashSet(mailDestination.getCurrentlyStoredMessageUids(folder.getFullName(), false));
-
-            logger.debug("Check now " + localMailSet.size() + " server mails for expunge");
-
-            localMailSet.removeAll(serverMailSet);
-            // localMailSet has now the ones that are not on server
-
-            logger.info(localMailSet.size() + " messages were locally deleted, because they are expunged on server.");
-
-            mailDestination.onMessageDeletes(localMailSet, folder.getFullName(), false);
+            if(deleteExpungedMessages) {
+            
+                final Set localMailSet = new HashSet(mailDestination.getCurrentlyStoredMessageUids(folder.getFullName(), false));
+    
+                logger.debug("Check now " + localMailSet.size() + " server mails for expunge");
+    
+                localMailSet.removeAll(serverMailSet);
+                // localMailSet has now the ones that are not on server
+    
+                logger.info(localMailSet.size() + " messages were locally deleted, because they are expunged on server.");
+    
+                mailDestination.onMessageDeletes(localMailSet, folder.getFullName(), false);
+            
+            }
 
         }
 

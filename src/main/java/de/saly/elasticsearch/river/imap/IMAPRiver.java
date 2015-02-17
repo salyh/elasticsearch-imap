@@ -143,6 +143,8 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
 
         final boolean stripTagsFromTextContent = XContentMapValues.nodeBooleanValue(imapSettings.get("with_striptags_from_textcontent"),
                 true);
+        
+        final boolean keepExpungedMessages = XContentMapValues.nodeBooleanValue(imapSettings.get("keep_expunged_messages"), false);
 
         // get two maps from the river settings to improve index creation
         final Map<String, Object> indexSettings = imapSettings.get("index_settings") != null ? XContentMapValues.nodeMapValue(
@@ -174,9 +176,9 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
         riverStateManager = new ElasticsearchRiverStateManager().client(client).index(indexName);
 
         if (props.getProperty("mail.store.protocol").toLowerCase().contains("imap")) {
-            mailSource = new ParallelPollingIMAPMailSource(props, threads, user, password).setWithFlagSync(withFlagSync);
+            mailSource = new ParallelPollingIMAPMailSource(props, threads, user, password).setWithFlagSync(withFlagSync).setDeleteExpungedMessages(!keepExpungedMessages);
         } else {
-            mailSource = new ParallelPollingPOPMailSource(props, threads, user, password);
+            mailSource = new ParallelPollingPOPMailSource(props, threads, user, password).setDeleteExpungedMessages(!keepExpungedMessages);
         }
 
         mailSource.setMailDestination(mailDestination);

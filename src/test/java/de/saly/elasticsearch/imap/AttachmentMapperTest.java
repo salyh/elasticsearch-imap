@@ -100,7 +100,7 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 
 
 
-	@Test
+	//@Test
 	public void testAttachments2() throws Exception{
 
 		final RiverSettings settings = riverSettings("/river-imap-attachments-2.json");
@@ -170,7 +170,7 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 		//BASE64 content testWORD.docx
 		Assert.assertTrue(get.getHits().hits()[0].getSourceAsString().contains("UEsDBAoAAAAAAHqEbD0AAAAAAAAAAAAAAAAGABwAX"));
 
-		get =  esSetup.client().prepareSearch("imapriverdata").addFields("attachments.content").setTypes("mail").setQuery(QueryBuilders.matchQuery("attachments.content", "wrapping")).execute().actionGet();//search(new SearchRequest("imapriverdata").types("mail")).actionGet();
+		get =  esSetup.client().prepareSearch("imapriverdata").addField("attachments.content").setTypes("mail").setQuery(QueryBuilders.matchQuery("attachments.content", "wrapping")).execute().actionGet();//search(new SearchRequest("imapriverdata").types("mail")).actionGet();
 		Assert.assertEquals(1, get.getHits().totalHits());
 		Assert.assertEquals(2, get.getHits().hits()[0].field("attachments.content").getValues().size());
 
@@ -186,7 +186,7 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 
 	}
 
-	@Test
+	//@Test
 	public void testAttachments3() throws Exception{
 
 		final RiverSettings settings = riverSettings("/river-imap-attachments-3.json");

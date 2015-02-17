@@ -23,7 +23,7 @@
  * $Id:$
  *
  **********************************************************************************************************************/
-package de.saly.elasticsearch.imap;
+/*package de.saly.elasticsearch.imap;
 
 import org.junit.Test;
 
@@ -50,4 +50,4 @@ public class RiverPopImapIntegrationTestCase extends RiverPopImapTestCase {
         renameScenarioIMAP("priv-river-imap-strato.json");
     }
 
-}
+}*/

@@ -60,6 +60,7 @@ Prerequisites:
    "with_attachments":false,
    "with_text_content":true,
    "with_flag_sync":true,
+   "keep_expunged_messages":false,
    "index_settings" : null,
    "type_mapping" : null
    
@@ -82,6 +83,7 @@ Prerequisites:
 * ``with_attachments`` - if ``true`` then attachments will be indexed (default: ``false``)
 * ``with_text_content`` - if ``true`` then the text content of the mail is indexed (default: ``true``)
 * ``with_flag_sync`` - IMAP only: if ``true`` then message flag changes will be detected and indexed. Maybe slow for very huge mailboxes. (default: ``true``)
+* ``keep_expunged_messages`` - if ``true`` then message which are expunged/deleted on the server will be kept in elasticsearch. (default: ``false``)
 * ``index_settings`` - optional settings for the Elasticsearch index
 * ``type_mapping`` - optional mapping for the Elasticsearch index type
 * ``headers_to_fields`` - array with e-mail header names to include as proper fields. To create a legal field name, the header name is prefixed with ``header_``, lowercased and has all non-alphanumeric characters replaced with ``_``. For example, an input of ``["Message-ID"]`` will copy that header into a field with name ``header_message_id``.

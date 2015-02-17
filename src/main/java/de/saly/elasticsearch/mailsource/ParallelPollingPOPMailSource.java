@@ -67,6 +67,7 @@ public class ParallelPollingPOPMailSource implements MailSource {
     private final int threadCount;
     private final String user;
     protected final ESLogger logger = ESLoggerFactory.getLogger(this.getClass().getName());
+    private boolean deleteExpungedMessages = true;
 
     public ParallelPollingPOPMailSource(final Properties props, final int threadCount, final String user, final String password) {
         super();
@@ -140,6 +141,11 @@ public class ParallelPollingPOPMailSource implements MailSource {
     @Override
     public void setStateManager(final RiverStateManager stateManager) {
         this.stateManager = stateManager;
+    }
+    
+    public ParallelPollingPOPMailSource setDeleteExpungedMessages(final boolean deleteExpungedMessages) {
+        this.deleteExpungedMessages = deleteExpungedMessages;
+        return this;
     }
 
     private ProcessResult process(final int messageCount, final int start, final String folderName) {
@@ -338,15 +344,18 @@ public class ParallelPollingPOPMailSource implements MailSource {
             logger.debug("Mailbox empty");
         }
 
-        // check for expunged/deleted messages
-        logger.debug("Check now " + localMailSet.size() + " mails for expunge");
-
-        localMailSet.removeAll(serverMailSet.keySet());
-        // tmpset has now the ones that are not on server
-
-        logger.info(localMailSet.size() + " messages were locally deleted, because they are expunged on server.");
-
-        mailDestination.onMessageDeletes(localMailSet, folder.getFullName(), true);
+        if(deleteExpungedMessages) {
+        
+            // check for expunged/deleted messages
+            logger.debug("Check now " + localMailSet.size() + " mails for expunge");
+    
+            localMailSet.removeAll(serverMailSet.keySet());
+            // tmpset has now the ones that are not on server
+    
+            logger.info(localMailSet.size() + " messages were locally deleted, because they are expunged on server.");
+    
+            mailDestination.onMessageDeletes(localMailSet, folder.getFullName(), true);
+        }
 
     }
 
