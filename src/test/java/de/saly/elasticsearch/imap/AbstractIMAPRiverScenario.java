@@ -37,7 +37,7 @@ import de.saly.elasticsearch.river.imap.IMAPRiver;
 
 public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTest {
 
-    protected void deleteScenarioIMAP(final String resource) throws Exception {
+    protected void deleteScenarioIMAP(final String resource, boolean keep_expunged) throws Exception {
 
         final RiverSettings settings = riverSettings("/" + resource);
 
@@ -71,19 +71,19 @@ public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTes
 
         Thread.sleep(25 * 1000);
 
-        Assert.assertEquals(30, getCount(indexName, typeName));
+        Assert.assertEquals(keep_expunged?33:30, getCount(indexName, typeName));
 
         createInitialIMAPTestdata(props, user, password, 7, false); // 3*7=21
 
         Thread.sleep(25 * 1000);
 
-        Assert.assertEquals(51, getCount(indexName, typeName));
+        Assert.assertEquals(keep_expunged?54:51, getCount(indexName, typeName));
         deleteMailsFromUserMailbox(props, "INBOX", 4, 2, user, password); // delete
         // 2
 
         Thread.sleep(25 * 1000);
 
-        Assert.assertEquals(49, getCount(indexName, typeName));
+        Assert.assertEquals(keep_expunged?54:49, getCount(indexName, typeName));
 
     }
 
@@ -147,7 +147,7 @@ public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTes
 
         river.close();
 
-        Assert.assertEquals(100, getCount(river.getIndexName(), river.getTypeName()));
+        Assert.assertEquals(100, getCount(river.getIndexNames(), river.getTypeName()));
 
     }
 
@@ -169,7 +169,33 @@ public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTes
 
         river.close();
 
-        Assert.assertEquals(55, getCount(river.getIndexName(), river.getTypeName()));
+        Assert.assertEquals(55, getCount(river.getIndexNames(), river.getTypeName()));
+
+    }
+    
+    protected void plainScenarioMulti(final String resource) throws Exception {
+
+        final RiverSettings settings = riverSettings("/" + resource);
+        final IMAPRiver river = new IMAPRiver(new RiverName("a", "b"), settings, esSetup.client());
+        river.start();
+
+        Thread.sleep(100);
+
+        putMailInMailbox(50);
+        putMailInMailbox2(50);
+        putMailInMailbox3(50);
+
+        Thread.sleep(500);
+
+        putMailInMailbox(5);
+        putMailInMailbox2(5);
+        putMailInMailbox3(5);
+
+        Thread.sleep(15000);
+
+        river.close();
+
+        Assert.assertEquals(55*3, getCount(river.getIndexNames(), river.getTypeName()));
 
     }
 
@@ -191,7 +217,7 @@ public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTes
 
         river.close();
 
-        Assert.assertEquals(55, getCount(river.getIndexName(), river.getTypeName()));
+        Assert.assertEquals(55, getCount(river.getIndexNames(), river.getTypeName()));
 
     }
 
@@ -212,7 +238,7 @@ public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTes
 
         river.close();
 
-        Assert.assertEquals(55, getCount(river.getIndexName(), river.getTypeName()));
+        Assert.assertEquals(55, getCount(river.getIndexNames(), river.getTypeName()));
 
     }
 

@@ -44,6 +44,10 @@ public interface MailSource {
     public void fetchAll() throws MessagingException, IOException; // blocks
 
     public void setMailDestination(MailDestination mailDestination);
+    
+    public MailDestination getMailDestination();
 
     public void setStateManager(RiverStateManager stateManager);
+
+    public void setDeleteExpungedMessages(boolean deleteExpungedMessages);
 }

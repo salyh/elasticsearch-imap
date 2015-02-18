@@ -1,0 +1,14 @@
+{
+   	  type:"imap",
+      "mail.store.protocol":"mock_imaps",
+      "mail.debug":"false",
+      "mail.debug.auth":"false",
+      "users":["es_imapriver_unittest@localhost","es_imapriver_unittest2@localhost","es_imapriver_unittest3@localhost"],
+      "passwords":["","",""],
+      "schedule":"0/3 0-59 0-23 ? * *",
+      "mail_index_name":"my_pop_river_index",
+      "mail_index_name_strategy":"username_crop",
+      "mail_type_name":"my_pop_river_type",
+      "bulk_flush_interval":"1s"
+   
+}

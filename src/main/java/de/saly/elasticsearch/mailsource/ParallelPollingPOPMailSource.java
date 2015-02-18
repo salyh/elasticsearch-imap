@@ -143,9 +143,8 @@ public class ParallelPollingPOPMailSource implements MailSource {
         this.stateManager = stateManager;
     }
     
-    public ParallelPollingPOPMailSource setDeleteExpungedMessages(final boolean deleteExpungedMessages) {
+    public void setDeleteExpungedMessages(final boolean deleteExpungedMessages) {
         this.deleteExpungedMessages = deleteExpungedMessages;
-        return this;
     }
 
     private ProcessResult process(final int messageCount, final int start, final String folderName) {

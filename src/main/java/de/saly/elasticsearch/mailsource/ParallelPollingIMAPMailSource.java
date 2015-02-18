@@ -149,9 +149,8 @@ public class ParallelPollingIMAPMailSource implements MailSource {
         return this;
     }
     
-    public ParallelPollingIMAPMailSource setDeleteExpungedMessages(final boolean deleteExpungedMessages) {
+    public void setDeleteExpungedMessages(final boolean deleteExpungedMessages) {
         this.deleteExpungedMessages = deleteExpungedMessages;
-        return this;
     }
 
     private ProcessResult process(final int messageCount, final int start, final String folderName) {

@@ -32,7 +32,13 @@ public class RiverPopImapTestCase extends AbstractIMAPRiverScenario {
     @Test
     public void testDeletesIMAPIntgr() throws Exception {
 
-        deleteScenarioIMAP("river-imaps-1.json");
+        deleteScenarioIMAP("river-imaps-1.json", false);
+    }
+    
+    @Test
+    public void testDeletesIMAPIntgrKeep() throws Exception {
+
+        deleteScenarioIMAP("river-imaps-1-keep.json", true);
     }
 
     @Test
@@ -51,6 +57,12 @@ public class RiverPopImapTestCase extends AbstractIMAPRiverScenario {
     @Test
     public void testImapPlainScenario() throws Exception {
         plainScenario("river-imaps-1.json");
+
+    }
+    
+    @Test
+    public void testImapPlainScenarioMulti() throws Exception {
+        plainScenarioMulti("river-imaps-1-multi.json");
 
     }
 

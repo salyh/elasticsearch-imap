@@ -31,6 +31,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
 
 import javax.mail.Flags.Flag;
@@ -73,9 +75,18 @@ public abstract class AbstractIMAPRiverUnitTest {
     protected static final String EMAIL_SUBJECT = "SID";
     protected static final String EMAIL_TEXT = "This is a test e-mail.";
     protected static final String EMAIL_TO = "esimaprivertest@localhost.com";
-    protected static final String EMAIL_USER_ADDRESS = "es_imapriver_unittest@localhost";
+    
     protected static final String USER_NAME = "es_imapriver_unittest";
+    protected static final String EMAIL_USER_ADDRESS = USER_NAME+"@localhost";
     protected static final String USER_PASSWORD = USER_NAME;
+    
+    protected static final String USER_NAME2 = "es_imapriver_unittest2";
+    protected static final String EMAIL_USER_ADDRESS2 = USER_NAME2+"@localhost";
+    protected static final String USER_PASSWORD2 = USER_NAME2;
+    
+    protected static final String USER_NAME3 = "es_imapriver_unittest3";
+    protected static final String EMAIL_USER_ADDRESS3 = USER_NAME3+"@localhost";
+    protected static final String USER_PASSWORD3 = USER_NAME3;
 
     @Rule
     public TestName name = new TestName();
@@ -243,6 +254,21 @@ public abstract class AbstractIMAPRiverUnitTest {
 
         return count.getCount();
     }
+    
+    protected long getCount(final List<String> indices, final String type) {
+        logger.debug("getCount()");
+
+        esSetup.client().admin().indices().refresh(new RefreshRequest()).actionGet();
+
+        long count = 0;
+        
+        for (Iterator iterator = indices.iterator(); iterator.hasNext();) {
+            String index = (String) iterator.next();
+            count += esSetup.client().count(new CountRequest(index).types(type)).actionGet().getCount();
+        }
+                
+        return count;
+    }
 
     protected Properties getProperties() {
         return new Properties();
@@ -268,7 +294,37 @@ public abstract class AbstractIMAPRiverUnitTest {
             MockMailbox.get(EMAIL_USER_ADDRESS).getInbox().add(message);
         }
         
-        logger.info("Putted " + messages + " into mailbox");
+        logger.info("Putted " + messages + " into mailbox "+EMAIL_USER_ADDRESS);
+    }
+    
+    protected void putMailInMailbox2(final int messages) throws MessagingException {
+
+        for (int i = 0; i < messages; i++) {
+            final MimeMessage message = new MimeMessage((Session) null);
+            message.setFrom(new InternetAddress(EMAIL_TO));
+            message.addRecipient(Message.RecipientType.TO, new InternetAddress(EMAIL_USER_ADDRESS2));
+            message.setSubject(EMAIL_SUBJECT + "::" + i);
+            message.setText(EMAIL_TEXT + "::" + SID++);
+            message.setSentDate(new Date());
+            MockMailbox.get(EMAIL_USER_ADDRESS2).getInbox().add(message);
+        }
+        
+        logger.info("Putted " + messages + " into mailbox "+EMAIL_USER_ADDRESS2);
+    }
+    
+    protected void putMailInMailbox3(final int messages) throws MessagingException {
+
+        for (int i = 0; i < messages; i++) {
+            final MimeMessage message = new MimeMessage((Session) null);
+            message.setFrom(new InternetAddress(EMAIL_TO));
+            message.addRecipient(Message.RecipientType.TO, new InternetAddress(EMAIL_USER_ADDRESS3));
+            message.setSubject(EMAIL_SUBJECT + "::" + i);
+            message.setText(EMAIL_TEXT + "::" + SID++);
+            message.setSentDate(new Date());
+            MockMailbox.get(EMAIL_USER_ADDRESS3).getInbox().add(message);
+        }
+        
+        logger.info("Putted " + messages + " into mailbox "+EMAIL_USER_ADDRESS3);
     }
 
     protected void registerRiver(final String typename, final String file) throws ElasticsearchException, IOException {

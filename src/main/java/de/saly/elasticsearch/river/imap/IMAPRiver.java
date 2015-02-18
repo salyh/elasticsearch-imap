@@ -32,6 +32,7 @@ import static org.quartz.TriggerBuilder.newTrigger;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -78,20 +79,22 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
     private final String folderPattern;
 
     private final String indexName;
+    
+    private final String indexNameStrategy;
 
     private final TimeValue interval;
 
     private final ESLogger logger = ESLoggerFactory.getLogger(IMAPRiver.class.getName());
 
-    private final MailDestination mailDestination;
+    //private final MailDestination mailDestination;
 
-    private final MailSource mailSource;
+    private final List<MailSource> mailSources = new ArrayList<MailSource>();
 
-    private final String password;
+    private final List<String> passwords = new ArrayList<String>();
 
     private final Properties props = new Properties();
 
-    private final RiverStateManager riverStateManager;
+    //private final RiverStateManager riverStateManager;
 
     private Scheduler sched;
 
@@ -99,7 +102,9 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
 
     private final String typeName;
 
-    private final String user;
+    private final List<String> indices = new ArrayList<String>();
+    
+    private final List<String> users = new ArrayList<String>();
 
     private final List<String> headersToFields;
 
@@ -109,12 +114,29 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
 
         final Map<String, Object> imapSettings = settings.settings();
 
-        user = XContentMapValues.nodeStringValue(imapSettings.get("user"), null);
-        password = XContentMapValues.nodeStringValue(imapSettings.get("password"), null);
+        String _user = XContentMapValues.nodeStringValue(imapSettings.get("user"), null);
+        String _password = XContentMapValues.nodeStringValue(imapSettings.get("password"), null);
+        
+        if(_user != null && !_user.isEmpty()) {
+            users.add(_user);
+            passwords.add(_password);
+        }
+        
+        
+        List<String> _users = arrayNodeToList(imapSettings.get("users"));
+        List<String> _passwords = arrayNodeToList(imapSettings.get("passwords"));
+        
+        if(_users != null && !_users.isEmpty()) {
+            users.addAll(_users);
+            passwords.addAll(_passwords);
+        }
 
         folderPattern = XContentMapValues.nodeStringValue(imapSettings.get("folderpattern"), null);
 
         indexName = XContentMapValues.nodeStringValue(imapSettings.get("mail_index_name"), "imapriverdata");
+        
+        indexNameStrategy = XContentMapValues.nodeStringValue(imapSettings.get("mail_index_name_strategy"), "all_in_one");
+        
         typeName = XContentMapValues.nodeStringValue(imapSettings.get("mail_type_name"), "mail");
 
         schedule = imapSettings.containsKey("schedule") ? XContentMapValues.nodeStringValue(imapSettings.get("schedule"), null) : null;
@@ -168,21 +190,47 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
         logger.debug("river settings " + imapSettings);
         logger.debug("mail settings " + props);
 
-        mailDestination = new ElasticsearchBulkMailDestination().maxBulkActions(bulkSize).maxConcurrentBulkRequests(maxBulkRequests)
-                .flushInterval(flushInterval).client(client).setMapping(typeMapping).setSettings(indexSettings).setType(typeName)
-                .setIndex(indexName).setWithAttachments(withAttachments).setWithTextContent(withTextContent).setWithHtmlContent(withHtmlContent)
-                .setPreferHtmlContent(preferHtmlContent).setStripTagsFromTextContent(stripTagsFromTextContent).setHeadersToFields(headersToFields);
+        for(int i=0; i<users.size();i++) {
+        
+            String user = users.get(i);
+            String password = passwords.get(i);
+            
+            String _indexName = null;
+            
+            if("all_in_one".equalsIgnoreCase(indexNameStrategy)) {
+                
+                _indexName = indexName;
+            } else if("username".equalsIgnoreCase(indexNameStrategy)) {
+                _indexName = user;
+            } else if("username_crop".equalsIgnoreCase(indexNameStrategy)) {
+                _indexName = user.split("@")[0];
+            }else if("prefixed_username".equalsIgnoreCase(indexNameStrategy)) {
+                _indexName = indexName+"-"+user;
+            }else if("prefixed_username_crop".equalsIgnoreCase(indexNameStrategy)) {
+                _indexName = indexName+"-"+user.split("@")[0];
+            }
+            
+            RiverStateManager riverStateManager = new ElasticsearchRiverStateManager().client(client).index(_indexName);
+            
+            MailSource mailSource = null;
+            
+            MailDestination mailDestination = new ElasticsearchBulkMailDestination().maxBulkActions(bulkSize).maxConcurrentBulkRequests(maxBulkRequests)
+                    .flushInterval(flushInterval).client(client).setMapping(typeMapping).setSettings(indexSettings).setType(typeName) //+user???
+                    .setIndex(_indexName).setWithAttachments(withAttachments).setWithTextContent(withTextContent).setWithHtmlContent(withHtmlContent)
+                    .setPreferHtmlContent(preferHtmlContent).setStripTagsFromTextContent(stripTagsFromTextContent).setHeadersToFields(headersToFields);
 
-        riverStateManager = new ElasticsearchRiverStateManager().client(client).index(indexName);
-
-        if (props.getProperty("mail.store.protocol").toLowerCase().contains("imap")) {
-            mailSource = new ParallelPollingIMAPMailSource(props, threads, user, password).setWithFlagSync(withFlagSync).setDeleteExpungedMessages(!keepExpungedMessages);
-        } else {
-            mailSource = new ParallelPollingPOPMailSource(props, threads, user, password).setDeleteExpungedMessages(!keepExpungedMessages);
+            if (props.getProperty("mail.store.protocol").toLowerCase().contains("imap")) {
+                mailSource = new ParallelPollingIMAPMailSource(props, threads, user, password).setWithFlagSync(withFlagSync);
+            } else {
+                mailSource = new ParallelPollingPOPMailSource(props, threads, user, password);
+            }
+    
+            mailSource.setDeleteExpungedMessages(!keepExpungedMessages);
+            mailSource.setMailDestination(mailDestination);
+            mailSource.setStateManager(riverStateManager);
+            mailSources.add(mailSource);
+            indices.add(_indexName);
         }
-
-        mailSource.setMailDestination(mailDestination);
-        mailSource.setStateManager(riverStateManager);
         logger.info("IMAPRiver created, river name: {}", riverName.getName());
     }
 
@@ -205,20 +253,24 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
             logger.warn("Unable to shutdown scheduler due to " + e, e);
 
         }
-
-        if (mailDestination != null) {
-            mailDestination.close();
-        }
-
-        if (mailSource != null) {
+        
+        for(int i=0;i<mailSources.size();i++) {
+                    
+            MailSource mailSource = mailSources.get(i);
+            mailSource.getMailDestination().close();
             mailSource.close();
+                    
         }
 
         logger.info("IMAPRiver closed");
     }
 
-    public String getIndexName() {
-        return indexName;
+    public List<String> getIndexNames() {
+        return Collections.unmodifiableList(indices);
+    }
+
+    public String getIndexNameStrategy() {
+        return indexNameStrategy;
     }
 
     public String getTypeName() {
@@ -227,18 +279,21 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
 
     public void once() throws MessagingException, IOException {
 
-        mailDestination.startup();
-
-        logger.debug("once() start");
-        final MailFlowJob mfj = new MailFlowJob();
-        try {
-            mfj.setPattern(folderPattern == null ? null : Pattern.compile(folderPattern));
-        } catch (final PatternSyntaxException e) {
-            logger.error("folderpattern is invalid due to {}", e, e.toString());
+        for(int i=0;i<mailSources.size();i++) {
+            
+            MailSource mailSource = mailSources.get(i);
+            mailSource.getMailDestination().startup();
+            logger.debug("once() start");
+            final MailFlowJob mfj = new MailFlowJob();
+            try {
+                mfj.setPattern(folderPattern == null ? null : Pattern.compile(folderPattern));
+            } catch (final PatternSyntaxException e) {
+                logger.error("folderpattern is invalid due to {}", e, e.toString());
+            }
+            mfj.setMailSource(mailSource);
+            mfj.execute();
+            logger.debug("once() end");
         }
-        mfj.setMailSource(mailSource);
-        mfj.execute();
-        logger.debug("once() end");
     }
 
     @Override
@@ -246,8 +301,6 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
         logger.info("Start IMAPRiver ...");
 
         try {
-
-            mailDestination.startup();
 
             sched = StdSchedulerFactory.getDefaultScheduler();
 
@@ -258,37 +311,52 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
                 logger.debug("Scheduler already running");
             }
 
-            final JobDataMap jdm = new JobDataMap();
-            jdm.put("mailSource", mailSource);
-
-            try {
-                if (folderPattern != null) {
-                    jdm.put("pattern", Pattern.compile(folderPattern));
+            
+            for(int i=0;i<mailSources.size();i++) {
+            
+                MailSource mailSource = mailSources.get(i);
+                mailSource.getMailDestination().startup();
+                final JobDataMap jdm = new JobDataMap();
+                jdm.put("mailSource", mailSource);
+    
+                try {
+                    if (folderPattern != null) {
+                        jdm.put("pattern", Pattern.compile(folderPattern));
+                    }
+                } catch (final PatternSyntaxException e) {
+                    throw new Exception("folderpattern is invalid due to " + e, e);
                 }
-            } catch (final PatternSyntaxException e) {
-                throw new Exception("folderpattern is invalid due to " + e, e);
+    
+                //final String group = "group_" + riverName.getName() + "-"+i+"-" + props.hashCode();
+    
+                final JobDetail job = newJob(MailFlowJob.class)
+                         //.withIdentity(riverName.getName() + "-"+i+"-" + props.hashCode(), group)
+                        .usingJobData(jdm)
+                        .build();
+    
+                Trigger trigger = null;
+    
+                if (StringUtils.isEmpty(schedule)) {
+                    logger.info("Trigger interval is every {} seconds", interval.seconds());
+    
+                    trigger = newTrigger()
+                            //.withIdentity("intervaltrigger", group)
+                            .startNow()
+                            .withSchedule(simpleSchedule().withIntervalInSeconds((int) interval.seconds()).repeatForever()).build();
+                } else {
+    
+                    logger.info("Trigger follows cron pattern {}", schedule);
+    
+                    trigger = newTrigger()
+                            //.withIdentity("crontrigger", group)
+                            .withSchedule(cronSchedule(schedule)).build();
+                }
+    
+                sched.scheduleJob(job, trigger);
+            
+            
             }
 
-            final String group = "group_" + riverName.getName() + "-" + props.hashCode();
-
-            final JobDetail job = newJob(MailFlowJob.class).withIdentity(riverName.getName() + "-" + props.hashCode(), group).usingJobData(jdm)
-                    .build();
-
-            Trigger trigger = null;
-
-            if (StringUtils.isEmpty(schedule)) {
-                logger.info("Trigger interval is every {} seconds", interval.seconds());
-
-                trigger = newTrigger().withIdentity("intervaltrigger", group).startNow()
-                        .withSchedule(simpleSchedule().withIntervalInSeconds((int) interval.seconds()).repeatForever()).build();
-            } else {
-
-                logger.info("Trigger follows cron pattern {}", schedule);
-
-                trigger = newTrigger().withIdentity("crontrigger", group).withSchedule(cronSchedule(schedule)).build();
-            }
-
-            sched.scheduleJob(job, trigger);
             sched.start();
             logger.info("IMAPRiver started");
 

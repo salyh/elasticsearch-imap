@@ -68,8 +68,10 @@ Prerequisites:
 
 * ``type`` - always "imap"
 * ``mail.*`` - see JAVAMail documentation https://javamail.java.net/nonav/docs/api/  (default: none)
-* ``user`` - user name for server login (default: ``null``)
-* ``password`` - password for server login (default: ``null``)
+* ``user`` - user name for server login (default: ``null``) - deprecated, use ``users``
+* ``password`` - password for server login (default: ``null``) - deprecated, use ``passwords``
+* ``users`` - array of users name for server login (default: ``null``)
+* ``passwords`` - array of passwords for server login (default: ``null``)
 * ``schedule`` - a cron expression like ``0/3 0-59 0-23 ? * *`` (default: ``null``)
 * ``interval`` - if no ``schedule`` is set then this is will be the indexing interval (default: ``60s``)
 * ``threads`` - How many thready for parallel indexing (must be 1 or higher) (default: ``5``)
@@ -78,6 +80,12 @@ Prerequisites:
 * ``max_bulk_requests`` - the maximum number of concurrent bulk requests (default: ``30``)
 * ``bulk_flush_interval`` - the time period the bulk processor is flushing outstanding documents (default: ``5s``)
 * ``mail_index_name`` - name of the index which holds the mail (default: ``imapriverdata``)
+* ``mail_index_name_strategy`` - how the indexname should be composed for each user (default: ``all_in_one``)
+   * ``all_in_one`` - Put all mails from all users, the index name is ``mail_index_name``
+   * ``username`` - Put mail from each user in a index with the users username
+   * ``username_crop`` - Put mail from each user in a index with the users username but crop at the @ sign
+   * ``prefixed_username`` - Put mail from each user in a index with the users username prefixed by ``mail_index_name``
+   * ``prefixed_username_crop`` - Put mail from each user in a index with the users username prefixed by ``mail_index_name`` but crop at the @ sign
 * ``mail_type_name`` - name of the type (default: ``mail``)
 * ``with_striptags_from_textcontent`` - if ``true`` then html/xml tags are stripped from text content (default: ``true``)
 * ``with_attachments`` - if ``true`` then attachments will be indexed (default: ``false``)
