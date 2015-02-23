@@ -59,6 +59,8 @@ import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.impl.StdSchedulerFactory;
 
+import de.saly.elasticsearch.ldap.ILoginSource;
+import de.saly.elasticsearch.ldap.LdapLoginSource;
 import de.saly.elasticsearch.maildestination.ElasticsearchBulkMailDestination;
 import de.saly.elasticsearch.maildestination.MailDestination;
 import de.saly.elasticsearch.mailsource.MailSource;
@@ -114,22 +116,7 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
 
         final Map<String, Object> imapSettings = settings.settings();
 
-        String _user = XContentMapValues.nodeStringValue(imapSettings.get("user"), null);
-        String _password = XContentMapValues.nodeStringValue(imapSettings.get("password"), null);
-        
-        if(_user != null && !_user.isEmpty()) {
-            users.add(_user);
-            passwords.add(_password);
-        }
-        
-        
-        List<String> _users = arrayNodeToList(imapSettings.get("users"));
-        List<String> _passwords = arrayNodeToList(imapSettings.get("passwords"));
-        
-        if(_users != null && !_users.isEmpty()) {
-            users.addAll(_users);
-            passwords.addAll(_passwords);
-        }
+        getUserLogins(imapSettings);
 
         folderPattern = XContentMapValues.nodeStringValue(imapSettings.get("folderpattern"), null);
 
@@ -378,5 +365,41 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
             }
         }
         return list;
+    }
+    
+    private void getUserLogins(final Map<String, Object> imapSettings) {
+        String userSource = XContentMapValues.nodeStringValue(imapSettings.get("user_source"), null);
+        ILoginSource source = null;
+
+        if ("ldap".equals(userSource)) {
+            //master user credentials for Dovecot
+            String masterUser = XContentMapValues.nodeStringValue(imapSettings.get("master_user"), null);
+            String masterPassword = XContentMapValues.nodeStringValue(imapSettings.get("master_password"), null);
+            source = new LdapLoginSource(imapSettings, masterUser, masterPassword);
+        } else {
+            //read logins directly
+            String _user = XContentMapValues.nodeStringValue(imapSettings.get("user"), null);
+            String _password = XContentMapValues.nodeStringValue(imapSettings.get("password"), null);
+
+            if (_user != null && !_user.isEmpty()) {
+                users.add(_user);
+                passwords.add(_password);
+            }
+
+            List<String> _users = arrayNodeToList(imapSettings.get("users"));
+            List<String> _passwords = arrayNodeToList(imapSettings.get("passwords"));
+
+            //TODO: inject master user credentials?
+            if (_users != null && !_users.isEmpty()) {
+                users.addAll(_users);
+                passwords.addAll(_passwords);
+            }
+        }
+
+        //read from generic source
+        if (source != null) {
+            users.addAll(source.getUserNames());
+            passwords.addAll(source.getUserPasswords());
+        }
     }
 }

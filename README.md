@@ -62,7 +62,17 @@ Prerequisites:
    "with_flag_sync":true,
    "keep_expunged_messages":false,
    "index_settings" : null,
-   "type_mapping" : null
+   "type_mapping" : null,
+   "user_source" : null,
+   "ldap_url" : null,
+   "ldap_user" : null,
+   "ldap_password" : null,
+   "ldap_base" : null,
+   "ldap_name_field" : "uid",
+   "ldap_password_field" : null,
+   "ldap_refresh_interval" : null,
+   "master_user" : null,
+   "master_password" : null
    
 }'</pre>
 
@@ -95,6 +105,16 @@ Prerequisites:
 * ``index_settings`` - optional settings for the Elasticsearch index
 * ``type_mapping`` - optional mapping for the Elasticsearch index type
 * ``headers_to_fields`` - array with e-mail header names to include as proper fields. To create a legal field name, the header name is prefixed with ``header_``, lowercased and has all non-alphanumeric characters replaced with ``_``. For example, an input of ``["Message-ID"]`` will copy that header into a field with name ``header_message_id``.
+* ``user_source`` - If "ldap" then query user and passwords from an ldap directory, if null or missing use users/passwords from the config file  (default: null)
+   * ``ldap_url`` - LDAP host and port (default: null), example: "ldap://ldaphostname:389"
+   * ``ldap_user`` - Ldap user which is used to query IMAP users (default: null), example: "cn=Directory Manager"
+   * ``ldap_password`` - Ldap password for ``ldap_user`` (default: null)
+   * ``ldap_base`` - Base Dn where to search for users, (default: null), example: "ou=users,ou=accounts,dc=company,dc=org"
+   * ``ldap_name_field`` - The fieldname (attribute) where the IMAP username is stored (default "dn"), example: "uid"
+   * ``ldap_password_field`` - The fieldname (attribute) of the IMAP password (default: "userPassword")
+   * ``ldap_refresh_interval`` - Refresh interval in minutes (default:"60"), set to "0" to disable automatic refreshing. If enabled this will automatically refresh the users/passwords from ldap every n minutes.
+   * ``master_user`` - For Dovecot, a master user account can be supplied who can access all users' mailboxes, even if their passwords are encrypted (default: null)
+   * ``master_password`` -  master user password (default: null)
 
 Note: For POP3 only the "INBOX" folder is supported. This is a limitation of the POP3 protocol.
 
@@ -339,7 +359,8 @@ If you want also indexing your mail attachments look here:
 <h3>Contributers/Credits</h3> 
 * Hans Jørgen Hoel (https://github.com/hansjorg)
 * Stefan Thies (https://github.com/megastef)
-
+* René Peinl (University Hof)
+ 
 <h3>License</h3> 
 Copyright (C) 2014 by Hendrik Saly (http://saly.de) and others.
 
