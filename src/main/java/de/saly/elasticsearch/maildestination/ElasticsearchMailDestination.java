@@ -346,13 +346,15 @@ public class ElasticsearchMailDestination implements MailDestination {
 
     @Override
     public synchronized ElasticsearchMailDestination startup() throws IOException {
-
+        
         if (started) {
+            logger.debug("Destination already started");
             return this;
         }
         waitForCluster();
         createIndexIfNotExists();
         started = true;
+        logger.debug("Destination started");
         return this;
     }
 
@@ -407,7 +409,13 @@ public class ElasticsearchMailDestination implements MailDestination {
     }
 
     private void waitForCluster() throws IOException {
-        waitForCluster(ClusterHealthStatus.YELLOW, TimeValue.timeValueSeconds(30));
+        
+        if(System.getProperty("imapriver.debug.disable_cluster_health_check") != null) {
+            logger.debug("Cluster health check disabled");
+            return;
+        } else {
+            waitForCluster(ClusterHealthStatus.YELLOW, TimeValue.timeValueSeconds(30));
+        }
     }
 
     private void waitForCluster(final ClusterHealthStatus status, final TimeValue timeout) throws IOException {
@@ -416,13 +424,15 @@ public class ElasticsearchMailDestination implements MailDestination {
             final ClusterHealthResponse healthResponse = client.admin().cluster().prepareHealth().setWaitForStatus(status)
                     .setTimeout(timeout).execute().actionGet();
             if (healthResponse.isTimedOut()) {
+                logger.error("Timeout while waiting for cluster state: {}, current cluster state is: {}", status.name(), healthResponse.getStatus().name());
                 throw new IOException("cluster state is " + healthResponse.getStatus().name() + " and not " + status.name()
-                        + ", cowardly refusing to continue with operations");
+                       + ", cowardly refusing to continue with operations");
             } else {
                 logger.debug("... cluster state ok");
             }
-        } catch (final ElasticsearchTimeoutException e) {
-            throw new IOException("timeout, cluster does not respond to health request, cowardly refusing to continue with operations");
+        } catch (final Exception e) {
+            logger.error("Exception while waiting for cluster state: {} due to ", e, status.name(), e.toString());
+            throw new IOException("timeout, cluster does not respond to health request, cowardly refusing to continue with operations", e);
         }
     }
 
