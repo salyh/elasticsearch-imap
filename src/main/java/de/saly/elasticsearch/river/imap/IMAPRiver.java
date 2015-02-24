@@ -42,6 +42,8 @@ import java.util.regex.PatternSyntaxException;
 import javax.mail.MessagingException;
 
 import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
@@ -86,9 +88,7 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
 
     private final TimeValue interval;
 
-    private final ESLogger logger = ESLoggerFactory.getLogger(IMAPRiver.class.getName());
-
-    //private final MailDestination mailDestination;
+    private static final ESLogger logger = ESLoggerFactory.getLogger(IMAPRiver.class.getName());
 
     private final List<MailSource> mailSources = new ArrayList<MailSource>();
 
@@ -96,7 +96,7 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
 
     private final Properties props = new Properties();
 
-    //private final RiverStateManager riverStateManager;
+    private final Client client;
 
     private Scheduler sched;
 
@@ -113,6 +113,8 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
     @Inject
     public IMAPRiver(final RiverName riverName, final RiverSettings riverSettings, final Client client) {
         super(riverName, riverSettings);
+        
+        this.client = client;
 
         final Map<String, Object> imapSettings = settings.settings();
 
@@ -305,7 +307,8 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
                 mailSource.getMailDestination().startup();
                 final JobDataMap jdm = new JobDataMap();
                 jdm.put("mailSource", mailSource);
-    
+                jdm.put("client", client);
+                
                 try {
                     if (folderPattern != null) {
                         jdm.put("pattern", Pattern.compile(folderPattern));
@@ -314,10 +317,7 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
                     throw new Exception("folderpattern is invalid due to " + e, e);
                 }
     
-                //final String group = "group_" + riverName.getName() + "-"+i+"-" + props.hashCode();
-    
                 final JobDetail job = newJob(MailFlowJob.class)
-                         //.withIdentity(riverName.getName() + "-"+i+"-" + props.hashCode(), group)
                         .usingJobData(jdm)
                         .build();
     
@@ -327,7 +327,6 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
                     logger.info("Trigger interval is every {} seconds", interval.seconds());
     
                     trigger = newTrigger()
-                            //.withIdentity("intervaltrigger", group)
                             .startNow()
                             .withSchedule(simpleSchedule().withIntervalInSeconds((int) interval.seconds()).repeatForever()).build();
                 } else {
@@ -335,13 +334,10 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
                     logger.info("Trigger follows cron pattern {}", schedule);
     
                     trigger = newTrigger()
-                            //.withIdentity("crontrigger", group)
                             .withSchedule(cronSchedule(schedule)).build();
                 }
     
                 sched.scheduleJob(job, trigger);
-            
-            
             }
 
             sched.start();
@@ -400,6 +396,36 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
         if (source != null) {
             users.addAll(source.getUserNames());
             passwords.addAll(source.getUserPasswords());
+        }
+    }
+    
+    public static void waitForYellowCluster(Client client) throws Exception {
+        
+        String enabledProperty = System.getProperty("imapriver.debug.enable_cluster_health_check");
+        
+        if(enabledProperty != null && Boolean.parseBoolean(enabledProperty)) {
+            logger.debug("Cluster health check enabled");
+        }else {
+            logger.debug("Cluster health check disabled");
+            return;
+        }
+        
+        ClusterHealthStatus status = ClusterHealthStatus.YELLOW;
+        
+        try {
+            logger.debug("waiting for cluster state {}", status.name());
+            final ClusterHealthResponse healthResponse = client.admin().cluster().prepareHealth().setWaitForStatus(status)
+                    .setTimeout(TimeValue.timeValueSeconds(30)).execute().actionGet();
+            if (healthResponse.isTimedOut()) {
+                logger.error("Timeout while waiting for cluster state: {}, current cluster state is: {}", status.name(), healthResponse.getStatus().name());
+                throw new Exception("cluster state is " + healthResponse.getStatus().name() + " and not " + status.name()
+                       + ", cowardly refusing to continue with operations");
+            } else {
+                logger.debug("... cluster state ok");
+            }
+        } catch (final Exception e) {
+            logger.error("Exception while waiting for cluster state: {} due to ", e, status.name(), e.toString());
+            throw new Exception("timeout, cluster does not respond to health request, cowardly refusing to continue with operations", e);
         }
     }
 }

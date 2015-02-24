@@ -30,8 +30,12 @@ import java.util.regex.Pattern;
 
 import javax.mail.MessagingException;
 
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.unit.TimeValue;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.InterruptableJob;
 import org.quartz.JobDataMap;
@@ -41,6 +45,7 @@ import org.quartz.JobKey;
 import org.quartz.UnableToInterruptJobException;
 
 import de.saly.elasticsearch.mailsource.MailSource;
+import de.saly.elasticsearch.river.imap.IMAPRiver;
 
 //Disallow running multiple jobs based on this class at the same time.  
 @DisallowConcurrentExecution
@@ -81,8 +86,11 @@ public class MailFlowJob implements InterruptableJob {
 
         mailSource = (MailSource) data.get("mailSource");
         pattern = (Pattern) data.get("pattern");
+        
+        Client client = (Client) data.get("client");
 
         try {
+            IMAPRiver.waitForYellowCluster(client);
             execute();
         } catch (final Exception e) {
             logger.error("Error in mail flow job {}: {} job", e, key.toString(), e.toString());
@@ -120,5 +128,7 @@ public class MailFlowJob implements InterruptableJob {
     public void setPattern(final Pattern pattern) {
         this.pattern = pattern;
     }
+    
+    
 
 }

@@ -50,6 +50,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
+import org.elasticsearch.common.Priority;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.unit.TimeValue;
@@ -351,7 +352,6 @@ public class ElasticsearchMailDestination implements MailDestination {
             logger.debug("Destination already started");
             return this;
         }
-        waitForCluster();
         createIndexIfNotExists();
         started = true;
         logger.debug("Destination started");
@@ -406,34 +406,6 @@ public class ElasticsearchMailDestination implements MailDestination {
             logger.debug("Typemapping {} already exists.", type);
         }
 
-    }
-
-    private void waitForCluster() throws IOException {
-        
-        if(System.getProperty("imapriver.debug.disable_cluster_health_check") != null) {
-            logger.debug("Cluster health check disabled");
-            return;
-        } else {
-            waitForCluster(ClusterHealthStatus.YELLOW, TimeValue.timeValueSeconds(30));
-        }
-    }
-
-    private void waitForCluster(final ClusterHealthStatus status, final TimeValue timeout) throws IOException {
-        try {
-            logger.debug("waiting for cluster state {}", status.name());
-            final ClusterHealthResponse healthResponse = client.admin().cluster().prepareHealth().setWaitForStatus(status)
-                    .setTimeout(timeout).execute().actionGet();
-            if (healthResponse.isTimedOut()) {
-                logger.error("Timeout while waiting for cluster state: {}, current cluster state is: {}", status.name(), healthResponse.getStatus().name());
-                throw new IOException("cluster state is " + healthResponse.getStatus().name() + " and not " + status.name()
-                       + ", cowardly refusing to continue with operations");
-            } else {
-                logger.debug("... cluster state ok");
-            }
-        } catch (final Exception e) {
-            logger.error("Exception while waiting for cluster state: {} due to ", e, status.name(), e.toString());
-            throw new IOException("timeout, cluster does not respond to health request, cowardly refusing to continue with operations", e);
-        }
     }
 
     protected IndexRequest createIndexRequest(final IndexableMailMessage message) throws IOException {
