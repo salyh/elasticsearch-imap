@@ -23,8 +23,11 @@
                      "type":"attachment",
                      "fields":{
                         "content":{
-                           "store":true
-                        }
+                           "store": true,
+                           "index": "analyzed"
+                        },
+                        "title" : {"store" : "yes"},
+                        "content_type" : {"store" : "yes"}
                      }
                   }
                }

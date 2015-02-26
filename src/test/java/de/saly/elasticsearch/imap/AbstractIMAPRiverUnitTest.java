@@ -46,16 +46,21 @@ import javax.mail.internet.MimeMessage;
 
 import org.apache.commons.io.IOUtils;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticsearchTimeoutException;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.count.CountRequest;
 import org.elasticsearch.action.count.CountResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.ImmutableSettings.Builder;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.river.RiverSettings;
 import org.elasticsearch.search.SearchHit;
@@ -91,25 +96,46 @@ public abstract class AbstractIMAPRiverUnitTest {
     @Rule
     public TestName name = new TestName();
     protected EsSetup esSetup;
-
+    protected EsSetup esSetup2;
+    protected EsSetup esSetup3;
+    
     protected final ESLogger logger = ESLoggerFactory.getLogger(this.getClass().getName());
 
-    protected final Builder settingsBuilder;
+  
 
     protected AbstractIMAPRiverUnitTest() {
         super();
 
         System.setProperty("java.net.preferIPv4Stack","true");
+ 
+    }
+    
+    
+    protected Builder getSettingsBuilder(boolean dataNode, boolean masterNode, boolean riverEnabled) {
+        Builder builder = ImmutableSettings
+        .settingsBuilder()
+        // .put(NODE_NAME, elasticsearchNode.name())
+        // .put("node.data", elasticsearchNode.data())
+        .put("cluster.name", "imapriver_testcluster")
+        .put("index.store.type", "memory").put("index.store.fs.memory.enabled", "true").put("gateway.type", "none")
+        .put("path.data", "target/data").put("path.work", "target/work").put("path.logs", "target/logs")
+        .put("path.conf", "target/config").put("path.plugins", "target/plugins").put("index.number_of_shards", "5")
+        .put("index.number_of_replicas", "0")
+        .put("node.data", dataNode)
+        .put("http.enabled", false)
+        .put("node.local", true)
+        .put("node.master", masterNode)
+       
         
-        settingsBuilder = ImmutableSettings
-                .settingsBuilder()
-                // .put(NODE_NAME, elasticsearchNode.name())
-                // .put("node.data", elasticsearchNode.data())
-                // .put("cluster.name", elasticsearchNode.clusterName())
-                .put("index.store.type", "memory").put("index.store.fs.memory.enabled", "true").put("gateway.type", "none")
-                .put("path.data", "target/data").put("path.work", "target/work").put("path.logs", "target/logs")
-                .put("path.conf", "target/config").put("path.plugins", "target/plugins").put("index.number_of_shards", "1")
-                .put("index.number_of_replicas", "0").put(getProperties());
+         
+        .put(getProperties());
+        
+        
+        if(!riverEnabled) {
+            builder.put("node.river", "_none_");
+        }
+        
+        return builder;
 
     }
 
@@ -122,8 +148,9 @@ public abstract class AbstractIMAPRiverUnitTest {
 
         // Instantiates a local node & client
 
-        esSetup = new EsSetup(settingsBuilder.build());
-
+        esSetup = new EsSetup(getSettingsBuilder(false, true, false).build());
+        esSetup2 = new EsSetup(getSettingsBuilder(true, false, false).build());
+        esSetup3 = new EsSetup(getSettingsBuilder(false, true, true).build());
         // Clean all, and creates some indices
 
         esSetup.execute(
@@ -131,6 +158,20 @@ public abstract class AbstractIMAPRiverUnitTest {
         deleteAll()
 
         );
+        
+        esSetup2.execute(
+
+                deleteAll()
+
+                );
+        
+        esSetup3.execute(
+
+                deleteAll()
+
+                );
+        
+        waitForGreenClusterState(esSetup.client());
 
     }
 
@@ -141,6 +182,14 @@ public abstract class AbstractIMAPRiverUnitTest {
 
         if (esSetup != null) {
             esSetup.terminate();
+        }
+        
+        if (esSetup2 != null) {
+            esSetup2.terminate();
+        }
+        
+        if (esSetup3 != null) {
+            esSetup3.terminate();
         }
 
     }
@@ -365,6 +414,26 @@ public abstract class AbstractIMAPRiverUnitTest {
         final InputStream in = this.getClass().getResourceAsStream(resource);
         return new RiverSettings(ImmutableSettings.settingsBuilder().build(), XContentHelper.convertToMap(Streams.copyToByteArray(in),
                 false).v2());
+    }
+    
+    protected void waitForGreenClusterState(final Client client) throws IOException {
+        waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30), client);
+    }
+
+    protected void waitForCluster(final ClusterHealthStatus status, final TimeValue timeout, final Client client) throws IOException {
+        try {
+            logger.debug("waiting for cluster state {}", status.name());
+            final ClusterHealthResponse healthResponse = client.admin().cluster().prepareHealth().setWaitForStatus(status)
+                    .setTimeout(timeout).execute().actionGet();
+            if (healthResponse.isTimedOut()) {
+                throw new IOException("cluster state is " + healthResponse.getStatus().name() + " and not " + status.name()
+                        + ", cowardly refusing to continue with operations");
+            } else {
+                logger.debug("... cluster state ok");
+            }
+        } catch (final ElasticsearchTimeoutException e) {
+            throw new IOException("timeout, cluster does not respond to health request, cowardly refusing to continue with operations");
+        }
     }
 
 }

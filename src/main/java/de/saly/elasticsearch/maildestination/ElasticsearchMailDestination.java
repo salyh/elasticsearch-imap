@@ -37,12 +37,8 @@ import javax.mail.Message;
 import javax.mail.MessagingException;
 
 import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.ElasticsearchTimeoutException;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
-import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
@@ -50,7 +46,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
-import org.elasticsearch.common.Priority;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.unit.TimeValue;
@@ -61,6 +56,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 
+import de.saly.elasticsearch.river.imap.IMAPRiver;
 import de.saly.elasticsearch.support.IndexableMailMessage;
 
 public class ElasticsearchMailDestination implements MailDestination {
@@ -78,6 +74,8 @@ public class ElasticsearchMailDestination implements MailDestination {
     private Map<String, Object> settings;
 
     private volatile boolean started;
+    
+    private volatile boolean initialized;
 
     private boolean stripTagsFromTextContent = true;
 
@@ -100,6 +98,8 @@ public class ElasticsearchMailDestination implements MailDestination {
 
         logger.info("Delete locally all messages for folder " + folderName);
 
+        createIndexIfNotExists();
+        
         client.admin().indices().refresh(new RefreshRequest()).actionGet();
 
         client.prepareDeleteByQuery(index).setTypes(type).setQuery(QueryBuilders.termQuery("folderFullName", folderName)).execute()
@@ -128,6 +128,8 @@ public class ElasticsearchMailDestination implements MailDestination {
     @Override
     public Set getCurrentlyStoredMessageUids(final String folderName, final boolean isPop) throws IOException, MessagingException {
 
+        createIndexIfNotExists();
+        
         client.admin().indices().refresh(new RefreshRequest()).actionGet();
 
         final Set uids = new HashSet();
@@ -167,6 +169,8 @@ public class ElasticsearchMailDestination implements MailDestination {
     @Override
     public int getFlaghashcode(final String id) throws IOException, MessagingException {
 
+        createIndexIfNotExists();
+        
         client.admin().indices().refresh(new RefreshRequest()).actionGet();
 
         final GetResponse getResponse = client.prepareGet().setIndex(index).setType(type).setId(id)
@@ -189,6 +193,8 @@ public class ElasticsearchMailDestination implements MailDestination {
     @Override
     public Set<String> getFolderNames() throws IOException, MessagingException {
 
+        createIndexIfNotExists();
+        
         client.admin().indices().refresh(new RefreshRequest()).actionGet();
 
         final HashSet<String> uids = new HashSet<String>();
@@ -257,6 +263,8 @@ public class ElasticsearchMailDestination implements MailDestination {
             }
             return;
         }
+        
+        createIndexIfNotExists();
 
         final IndexableMailMessage imsg = IndexableMailMessage.fromJavaMailMessage(msg, withTextContent, withHtmlContent, preferHtmlContent, withAttachments,
                 stripTagsFromTextContent, headersToFields);
@@ -277,6 +285,8 @@ public class ElasticsearchMailDestination implements MailDestination {
             return;
         }
 
+        createIndexIfNotExists();
+        
         client.admin().indices().refresh(new RefreshRequest()).actionGet();
 
         logger.info("Will delete " + msgs.size() + " messages locally for folder " + folderName);
@@ -352,7 +362,6 @@ public class ElasticsearchMailDestination implements MailDestination {
             logger.debug("Destination already started");
             return this;
         }
-        createIndexIfNotExists();
         started = true;
         logger.debug("Destination started");
         return this;
@@ -366,46 +375,62 @@ public class ElasticsearchMailDestination implements MailDestination {
             return;
         }
 
+        if(initialized) {
+            return;
+        }
+        
+        
+        IMAPRiver.waitForYellowCluster(client);
+        
         // create index if it doesn't already exist
         if (!client.admin().indices().prepareExists(index).execute().actionGet().isExists()) {
     
             final CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(index);
             if (settings != null) {
+                logger.debug("index settings are provided, will apply them {}", settings);
                 createIndexRequestBuilder.setSettings(settings);
+            } else {
+                logger.debug("no settings given for index '{}'",index);
             }
+            
+            
             if (mapping != null) {
+                logger.debug("mapping for type '{}' is provided, will apply {}", type, mapping);
                 createIndexRequestBuilder.addMapping(type, mapping);
+            } else {
+                logger.debug("no mapping given for type '{}', will apply default mapping",type);
+                createIndexRequestBuilder.addMapping(type, getDefaultTypeMapping());
             }
             
             final CreateIndexResponse res = createIndexRequestBuilder.get();
-            logger.info("Index {} created? {}", index, res.isAcknowledged());
-        } else {
-            logger.debug("Index {} already exists.", index);
-        }
-        
-        // create typemapping if it doesn't already exist
-        if (!client.admin().indices().prepareTypesExists(index).setTypes(type).execute().actionGet().isExists()) {
-        
-            final XContentBuilder mappingBuilder = jsonBuilder().startObject().startObject(type).startObject("properties")
-                    .startObject("folderFullName").field("index", "not_analyzed").field("type", "string").endObject()
-                    .startObject("receivedDate").field("type", "date").field("format", "basic_date_time").endObject().startObject("sentDate")
-                    .field("type", "date").field("format", "basic_date_time").endObject().startObject("flaghashcode").field("type", "integer")
-                    .endObject()
-                    // .startObject("attachments").startObject("properties").startObject("content").field("type",
-                    // "attachment").endObject().endObject().endObject()
-                    .endObject().endObject().endObject();
             
-            final PutMappingResponse response = client.admin().indices().preparePutMapping(index).setType(type).setSource(mappingBuilder)
-                    .execute().actionGet();
-            logger.info("Typemapping {} created? {}", type, response.isAcknowledged());
-    
-            if (!response.isAcknowledged()) {
-                throw new IOException("Could not define mapping for type [" + index + "]/[" + type + "].");
+            if (!res.isAcknowledged()) {
+                throw new IOException("Could not create index " + index);
             }
+            
+            IMAPRiver.waitForYellowCluster(client);
+            
+            logger.info("Index {} created", index);
+            
         } else {
-            logger.debug("Typemapping {} already exists.", type);
+            logger.debug("Index {} already exists", index);
         }
+    }
+    
+    
+    private XContentBuilder getDefaultTypeMapping() throws IOException {
+        
+        final XContentBuilder mappingBuilder = jsonBuilder().startObject().startObject(type).startObject("properties")
+                .startObject("folderFullName").field("index", "not_analyzed").field("type", "string").endObject()
+                .startObject("receivedDate").field("type", "date").field("format", "basic_date_time").endObject().startObject("sentDate")
+                .field("type", "date").field("format", "basic_date_time").endObject().startObject("flaghashcode").field("type", "integer")
+                .endObject()
+                // .startObject("attachments").startObject("properties").startObject("content").field("type",
+                // "attachment").endObject().endObject().endObject()
+                .endObject().endObject().endObject();
 
+        return mappingBuilder;
+        
     }
 
     protected IndexRequest createIndexRequest(final IndexableMailMessage message) throws IOException {

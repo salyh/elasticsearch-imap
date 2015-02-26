@@ -30,6 +30,13 @@ import de.saly.elasticsearch.support.IMAPUtils;
 
 public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 
+        private static final String APPLICATION_WORD = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        private static final String APPLICATION_PDF = "application/pdf";
+        private static final String WORD_BASE64_DETECTION = "UEsDBAoAAAAAAHqEbD0AAAAAAAAAAAAAAAAGABwAX";
+        private static final String PDF_BASE64_DETECTION = "JVBERi0xLjQKJaqrrK0KNCAwIG9iag";
+        private static final String PDF_CONTENT_TO_SEARCH = "connection management when streaming out content from";
+        private static final String WORD_CONTENT_TO_SEARCH = "This paragraph is in the default text style";
+        
 	@Test
 	public void testAttachments() throws Exception{
 
@@ -69,7 +76,7 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 		mp.addBodyPart(bp);
 
 		bp = new MimeBodyPart();
-		DataSource ds = new ByteArrayDataSource(this.getClass().getResourceAsStream("/httpclient-tutorial.pdf"), "application/pdf");
+		DataSource ds = new ByteArrayDataSource(this.getClass().getResourceAsStream("/httpclient-tutorial.pdf"), AttachmentMapperTest.APPLICATION_PDF);
 		bp.setDataHandler(new DataHandler(ds));
 		bp.setFileName("httpclient-tutorial.pdf");
 		mp.addBodyPart(bp);
@@ -84,23 +91,23 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 
 		esSetup.client().admin().indices().refresh(new RefreshRequest()).actionGet();
 
-
-		SearchResponse get =  esSetup.client().prepareSearch("imapriverdata").setTypes("mail").execute().actionGet();
-		Assert.assertEquals(1, get.getHits().totalHits());
-
+		SearchResponse searchResponse =  esSetup.client().prepareSearch("imapriverdata").setTypes("mail").execute().actionGet();
+		Assert.assertEquals(1, searchResponse.getHits().totalHits());
+                
 		//BASE64 content httpclient-tutorial.pdf
-		Assert.assertTrue(get.getHits().hits()[0].getSourceAsString().contains("JVBERi0xLjQKJaqrrK0KNCAwIG9iag"));
+		Assert.assertTrue(searchResponse.getHits().hits()[0].getSourceAsString().contains(AttachmentMapperTest.PDF_BASE64_DETECTION));
 
-		get =  esSetup.client().prepareSearch("imapriverdata").addFields("attachments.content").setTypes("mail").setQuery(QueryBuilders.matchQuery("attachments.content", "wrapping")).execute().actionGet();//search(new SearchRequest("imapriverdata").types("mail")).actionGet();
-		Assert.assertEquals(1, get.getHits().totalHits());
-		Assert.assertEquals(1, get.getHits().hits()[0].field("attachments.content").getValues().size());
-		Assert.assertTrue(get.getHits().hits()[0].field("attachments.content").getValue().toString().contains("wrapping"));
+		searchResponse =  esSetup.client().prepareSearch("imapriverdata").addFields("*").setTypes("mail").setQuery(QueryBuilders.matchPhraseQuery("attachments.content", PDF_CONTENT_TO_SEARCH)).execute().actionGet();
+		Assert.assertEquals(1, searchResponse.getHits().totalHits());
+
+		Assert.assertEquals(1, searchResponse.getHits().hits()[0].field("attachments.content").getValues().size());
+		Assert.assertEquals("HttpClient Tutorial", searchResponse.getHits().hits()[0].field("attachments.content.title").getValue().toString());
+		Assert.assertEquals("application/pdf", searchResponse.getHits().hits()[0].field("attachments.content.content_type").getValue().toString());
+		Assert.assertTrue(searchResponse.getHits().hits()[0].field("attachments.content").getValue().toString().contains(PDF_CONTENT_TO_SEARCH));
 
 	}
-
-
-
-	//@Test
+	
+	@Test
 	public void testAttachments2() throws Exception{
 
 		final RiverSettings settings = riverSettings("/river-imap-attachments-2.json");
@@ -137,7 +144,7 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 		mp.addBodyPart(bp);
 
 		bp = new MimeBodyPart();
-		DataSource ds = new ByteArrayDataSource(this.getClass().getResourceAsStream("/httpclient-tutorial.pdf"), "application/pdf");
+		DataSource ds = new ByteArrayDataSource(this.getClass().getResourceAsStream("/httpclient-tutorial.pdf"), AttachmentMapperTest.APPLICATION_PDF);
 		bp.setDataHandler(new DataHandler(ds));
 		bp.setFileName("httpclient-tutorial.pdf");
 		mp.addBodyPart(bp);
@@ -145,7 +152,7 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 
 
 		bp = new MimeBodyPart();
-		ds = new ByteArrayDataSource(this.getClass().getResourceAsStream("/testWORD.docx"), "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+		ds = new ByteArrayDataSource(this.getClass().getResourceAsStream("/testWORD.docx"), AttachmentMapperTest.APPLICATION_WORD);
 		bp.setDataHandler(new DataHandler(ds));
 		bp.setFileName("testWORD.docx");
 		mp.addBodyPart(bp);
@@ -161,32 +168,32 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 
 		esSetup.client().admin().indices().refresh(new RefreshRequest()).actionGet();
 
-		SearchResponse get =  esSetup.client().prepareSearch("imapriverdata").setTypes("mail").execute().actionGet();
-		Assert.assertEquals(1, get.getHits().totalHits());
+		SearchResponse searchResponse =  esSetup.client().prepareSearch("imapriverdata").setTypes("mail").execute().actionGet();
+		Assert.assertEquals(1, searchResponse.getHits().totalHits());
 
 		//BASE64 content httpclient-tutorial.pdf
-		Assert.assertTrue(get.getHits().hits()[0].getSourceAsString().contains("JVBERi0xLjQKJaqrrK0KNCAwIG9iag"));
+		Assert.assertTrue(searchResponse.getHits().hits()[0].getSourceAsString().contains(AttachmentMapperTest.PDF_BASE64_DETECTION));
 
 		//BASE64 content testWORD.docx
-		Assert.assertTrue(get.getHits().hits()[0].getSourceAsString().contains("UEsDBAoAAAAAAHqEbD0AAAAAAAAAAAAAAAAGABwAX"));
+		Assert.assertTrue(searchResponse.getHits().hits()[0].getSourceAsString().contains(AttachmentMapperTest.WORD_BASE64_DETECTION));
 
-		get =  esSetup.client().prepareSearch("imapriverdata").addField("attachments.content").setTypes("mail").setQuery(QueryBuilders.matchQuery("attachments.content", "wrapping")).execute().actionGet();//search(new SearchRequest("imapriverdata").types("mail")).actionGet();
-		Assert.assertEquals(1, get.getHits().totalHits());
-		Assert.assertEquals(2, get.getHits().hits()[0].field("attachments.content").getValues().size());
+		searchResponse =  esSetup.client().prepareSearch("imapriverdata").addFields("*").setTypes("mail").get();//.setQuery(QueryBuilders.matchPhraseQuery("attachments.content", PDF_CONTENT_TO_SEARCH)).execute().actionGet();
+		Assert.assertEquals(1, searchResponse.getHits().totalHits());
+		Assert.assertEquals(2, searchResponse.getHits().hits()[0].field("attachments.content").getValues().size());
 
 		//first value is httpclient-tutorial.pdf
-		Assert.assertTrue(get.getHits().hits()[0].field("attachments.content").getValue().toString().contains("wrapping"));
+		Assert.assertTrue(searchResponse.getHits().hits()[0].field("attachments.content").getValue().toString().contains(PDF_CONTENT_TO_SEARCH));
 
-		get =  esSetup.client().prepareSearch("imapriverdata").addFields("attachments.content").setTypes("mail").setQuery(QueryBuilders.matchQuery("attachments.content", "This paragraph is in the default text style")).execute().actionGet();//search(new SearchRequest("imapriverdata").types("mail")).actionGet();
-		Assert.assertEquals(1, get.getHits().totalHits());
-		Assert.assertEquals(2, get.getHits().hits()[0].field("attachments.content").getValues().size());
+		searchResponse =  esSetup.client().prepareSearch("imapriverdata").addFields("attachments.content").setTypes("mail").setQuery(QueryBuilders.matchQuery("attachments.content", WORD_CONTENT_TO_SEARCH)).execute().actionGet();
+		Assert.assertEquals(1, searchResponse.getHits().totalHits());
+		Assert.assertEquals(2, searchResponse.getHits().hits()[0].field("attachments.content").getValues().size());
 
 		//second value is testWORD.docx
-		Assert.assertTrue(get.getHits().hits()[0].field("attachments.content").getValues().get(1).toString().contains("This paragraph is in the default text style"));
+		Assert.assertTrue(searchResponse.getHits().hits()[0].field("attachments.content").getValues().get(1).toString().contains(WORD_CONTENT_TO_SEARCH));
 
 	}
 
-	//@Test
+	@Test
 	public void testAttachments3() throws Exception{
 
 		final RiverSettings settings = riverSettings("/river-imap-attachments-3.json");
@@ -223,7 +230,7 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 		mp.addBodyPart(bp);
 
 		bp = new MimeBodyPart();
-		DataSource ds = new ByteArrayDataSource(this.getClass().getResourceAsStream("/httpclient-tutorial.pdf"), "application/pdf");
+		DataSource ds = new ByteArrayDataSource(this.getClass().getResourceAsStream("/httpclient-tutorial.pdf"), AttachmentMapperTest.APPLICATION_PDF);
 		bp.setDataHandler(new DataHandler(ds));
 		bp.setFileName("httpclient-tutorial.pdf");
 		mp.addBodyPart(bp);
@@ -231,7 +238,7 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 
 
 		bp = new MimeBodyPart();
-		ds = new ByteArrayDataSource(this.getClass().getResourceAsStream("/testWORD.docx"), "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+		ds = new ByteArrayDataSource(this.getClass().getResourceAsStream("/testWORD.docx"), AttachmentMapperTest.APPLICATION_WORD);
 		bp.setDataHandler(new DataHandler(ds));
 		bp.setFileName("testWORD.docx");
 		mp.addBodyPart(bp);
@@ -247,28 +254,28 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 
 		esSetup.client().admin().indices().refresh(new RefreshRequest()).actionGet();
 
-		SearchResponse get =  esSetup.client().prepareSearch("imapriverdata").setTypes("mail").execute().actionGet();
-		Assert.assertEquals(1, get.getHits().totalHits());
+		SearchResponse searchResponse =  esSetup.client().prepareSearch("imapriverdata").setTypes("mail").execute().actionGet();
+		Assert.assertEquals(1, searchResponse.getHits().totalHits());
 
 		//BASE64 content httpclient-tutorial.pdf
-		Assert.assertTrue(get.getHits().hits()[0].getSourceAsString().contains("JVBERi0xLjQKJaqrrK0KNCAwIG9iag"));
+		Assert.assertTrue(searchResponse.getHits().hits()[0].getSourceAsString().contains(AttachmentMapperTest.PDF_BASE64_DETECTION));
 
 		//BASE64 content testWORD.docx
-		Assert.assertTrue(get.getHits().hits()[0].getSourceAsString().contains("UEsDBAoAAAAAAHqEbD0AAAAAAAAAAAAAAAAGABwAX"));
+		Assert.assertTrue(searchResponse.getHits().hits()[0].getSourceAsString().contains(AttachmentMapperTest.WORD_BASE64_DETECTION));
 
-		get =  esSetup.client().prepareSearch("imapriverdata").addFields("attachments.content").setTypes("mail").setQuery(QueryBuilders.matchQuery("attachments.content", "wrapping")).execute().actionGet();//search(new SearchRequest("imapriverdata").types("mail")).actionGet();
-		Assert.assertEquals(1, get.getHits().totalHits());
-		Assert.assertEquals(2, get.getHits().hits()[0].field("attachments.content").getValues().size());
+		searchResponse =  esSetup.client().prepareSearch("imapriverdata").addFields("attachments.content").setTypes("mail").setQuery(QueryBuilders.matchQuery("attachments.content", PDF_CONTENT_TO_SEARCH)).execute().actionGet();
+		Assert.assertEquals(1, searchResponse.getHits().totalHits());
+		Assert.assertEquals(2, searchResponse.getHits().hits()[0].field("attachments.content").getValues().size());
 
 		//first value is httpclient-tutorial.pdf
-		Assert.assertTrue(get.getHits().hits()[0].field("attachments.content").getValue().toString().contains("wrapping"));
+		Assert.assertTrue(searchResponse.getHits().hits()[0].field("attachments.content").getValue().toString().contains(PDF_CONTENT_TO_SEARCH));
 
-		get =  esSetup.client().prepareSearch("imapriverdata").addFields("attachments.content").setTypes("mail").setQuery(QueryBuilders.matchQuery("attachments.content", "This paragraph is in the default text style")).execute().actionGet();//search(new SearchRequest("imapriverdata").types("mail")).actionGet();
-		Assert.assertEquals(1, get.getHits().totalHits());
-		Assert.assertEquals(2, get.getHits().hits()[0].field("attachments.content").getValues().size());
+		searchResponse =  esSetup.client().prepareSearch("imapriverdata").addFields("attachments.content").setTypes("mail").setQuery(QueryBuilders.matchQuery("attachments.content", WORD_CONTENT_TO_SEARCH)).execute().actionGet();
+		Assert.assertEquals(1, searchResponse.getHits().totalHits());
+		Assert.assertEquals(2, searchResponse.getHits().hits()[0].field("attachments.content").getValues().size());
 
 		//second value is testWORD.docx
-		Assert.assertTrue(get.getHits().hits()[0].field("attachments.content").getValues().get(1).toString().contains("This paragraph is in the default text style"));
+		Assert.assertTrue(searchResponse.getHits().hits()[0].field("attachments.content").getValues().get(1).toString().contains(WORD_CONTENT_TO_SEARCH));
 
 	}
 

@@ -37,16 +37,11 @@
                   "tokenizer":"icu_tokenizer"
                }
             }
-         },
-         "index":{
-            "number_of_replicas":"1",
-            "number_of_shards":"5"
          }
       }
    },
    "type_mapping":{
       "mail":{
-         "dynamic":"strict",
          "properties":{
             "attachmentCount":{
                "type":"long"

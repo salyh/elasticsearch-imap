@@ -399,17 +399,8 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
         }
     }
     
-    public static void waitForYellowCluster(Client client) throws Exception {
-        
-        String enabledProperty = System.getProperty("imapriver.debug.enable_cluster_health_check");
-        
-        if(enabledProperty != null && Boolean.parseBoolean(enabledProperty)) {
-            logger.debug("Cluster health check enabled");
-        }else {
-            logger.debug("Cluster health check disabled");
-            return;
-        }
-        
+    public static void waitForYellowCluster(Client client) throws IOException {
+
         ClusterHealthStatus status = ClusterHealthStatus.YELLOW;
         
         try {
@@ -418,14 +409,14 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
                     .setTimeout(TimeValue.timeValueSeconds(30)).execute().actionGet();
             if (healthResponse.isTimedOut()) {
                 logger.error("Timeout while waiting for cluster state: {}, current cluster state is: {}", status.name(), healthResponse.getStatus().name());
-                throw new Exception("cluster state is " + healthResponse.getStatus().name() + " and not " + status.name()
+                throw new IOException("cluster state is " + healthResponse.getStatus().name() + " and not " + status.name()
                        + ", cowardly refusing to continue with operations");
             } else {
                 logger.debug("... cluster state ok");
             }
         } catch (final Exception e) {
             logger.error("Exception while waiting for cluster state: {} due to ", e, status.name(), e.toString());
-            throw new Exception("timeout, cluster does not respond to health request, cowardly refusing to continue with operations", e);
+            throw new IOException("timeout, cluster does not respond to health request, cowardly refusing to continue with operations", e);
         }
     }
 }
