@@ -3,6 +3,8 @@ elasticsearch-river-imap
 
 IMAP (and POP3) river for Elasticsearch
 
+_Due to the deprecation of rivers since Elasticsearch 1.5 this river will be rewritten to become a normal plugin. Stay tuned for updates on this_
+
 [![Build Status](https://travis-ci.org/salyh/elasticsearch-river-imap.png?branch=master)](https://travis-ci.org/salyh/elasticsearch-river-imap)
 
 <a href="mailto:hendrikdev22@gmail.com">E-Mail hendrikdev22@gmail.com</a><p>
@@ -22,7 +24,7 @@ Features:
 * Bulk indexing
 * Works also with Gmail, iCloud, Yahoo, etc. 
 
-The river acts currently as a disconnected client. This means that the river is polling and for every indexing run a new server connection is opened and, after work is done, closed.
+The river acts as a disconnected client. This means that the river is polling and for every indexing run a new server connection is opened and, after work is done, closed.
 
 Branches:
 * master for Elasticsearch 1.2.x/1.3.x/1.4.x/1.5.x
@@ -33,7 +35,7 @@ Prerequisites:
 * Elasticsearch 1.2 or higher
 * At least one IMAP4 or POP3 server to connect to
 
-``bin/plugin -i de.saly/elasticsearch-river-imap/0.8``
+``bin/plugin -i de.saly/elasticsearch-river-imap/0.8.5``
 
 <h3>Configuration</h3>
 <pre>curl -XPUT 'http://localhost:9200/_river/nameofyourriver/_meta' -d '{
@@ -363,7 +365,7 @@ If you want also indexing your mail attachments look here:
 * René Peinl (University Hof)
  
 <h3>License</h3> 
-Copyright (C) 2014 by Hendrik Saly (http://saly.de) and others.
+Copyright (C) 2014-2015 by Hendrik Saly (http://saly.de) and others.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you
 may not use this file except in compliance with the License. You may
