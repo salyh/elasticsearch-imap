@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<name>Elasticsearch IMAP (and POP3) River</name>
 	<modelVersion>4.0.0</modelVersion>
 
@@ -10,7 +9,7 @@
 
 	<groupId>de.saly</groupId>
 	<artifactId>elasticsearch-river-imap</artifactId>
-	<version>0.8.5-SNAPSHOT</version>
+	<version>0.8.5</version>
 	<packaging>jar</packaging>
 	<description>IMAP (and POP3) river for Elasticsearch</description>
 	<inceptionYear>2014</inceptionYear>
@@ -41,7 +40,8 @@
 		<url>https://github.com/salyh/elasticsearch-river-imap</url>
 		<connection>scm:git:git@github.com:salyh/elasticsearch-river-imap.git</connection>
 		<developerConnection>scm:git:git@github.com:salyh/elasticsearch-river-imap.git</developerConnection>
-	</scm>
+	  <tag>v0.8.5</tag>
+  </scm>
 
 
 	<issueManagement>
