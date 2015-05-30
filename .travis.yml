@@ -5,9 +5,5 @@ jdk:
   - oraclejdk7
   - oraclejdk8 
 
-notifications:
-  email:
-    recipients:
-      - hendrikdev22@gmail.com
-    on_success: always
-    on_failure: always
+after_success:
+  - mvn clean cobertura:cobertura coveralls:report

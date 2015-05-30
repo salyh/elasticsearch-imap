@@ -20,11 +20,12 @@ Features:
 * IMAP only: Subfolders can also be indexed (whole traversal of all folders)
 * No special server capabilities needed
 * Bulk indexing
+* Works also with Gmail, iCloud, Yahoo, etc. 
 
 The river acts currently as a disconnected client. This means that the river is polling and for every indexing run a new server connection is opened and, after work is done, closed.
 
 Branches:
-* master for Elasticsearch 1.2.x/1.3.x/1.4.x
+* master for Elasticsearch 1.2.x/1.3.x/1.4.x/1.5.x
 
 <h3>Installation</h3> 
 Prerequisites:
@@ -32,7 +33,7 @@ Prerequisites:
 * Elasticsearch 1.2 or higher
 * At least one IMAP4 or POP3 server to connect to
 
-``plugin.sh|.bat -i river-imap -u http://dl.bintray.com/salyh/maven/de/saly/elasticsearch/plugin/elasticsearch-river-imap/0.4/elasticsearch-river-imap-0.4-plugin.zip``
+``bin/plugin -i de.saly/elasticsearch-river-imap/0.8``
 
 <h3>Configuration</h3>
 <pre>curl -XPUT 'http://localhost:9200/_river/nameofyourriver/_meta' -d '{
