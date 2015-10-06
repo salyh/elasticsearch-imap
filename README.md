@@ -35,9 +35,11 @@ Prerequisites:
 * Elasticsearch 1.2 or higher (not working with ES 2.0 yet)
 * At least one IMAP4 or POP3 server to connect to
 
-Download .zip ``https://github.com/salyh/elasticsearch-river-imap/releases`` (only Version 0.8.6 or higher) and unzip them somwhere.
+Download .zip https://github.com/salyh/elasticsearch-river-imap/releases/latest (only Version 0.8.6 or higher) and unzip them somwhere.
 
-* ``importer.sh <config-file>``
+Then run
+
+* ``./importer.sh <config-file>``
 * ``importer.bat <config-file>``
 
 <h3>Configuration</h3>
@@ -127,9 +129,9 @@ Put the following configuration in a file and store them somewhere with a extens
    * ``ldap_refresh_interval`` - Refresh interval in minutes (default:"60"), set to "0" to disable automatic refreshing. If enabled this will automatically refresh the users/passwords from ldap every n minutes.
    * ``master_user`` - For Dovecot, a master user account can be supplied who can access all users' mailboxes, even if their passwords are encrypted (default: null)
    * ``master_password`` -  master user password (default: null)
-   * ``client.transport.*`` see https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/transport-client.html
-   * ``cluster.name`` see https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/transport-client.html
-   * ``elasticsearch.hosts`` Comma separated list of elasticsearch nodes/servers (mandatory) 
+* ``client.transport.*`` see https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/transport-client.html
+* ``cluster.name`` see https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/transport-client.html
+* ``elasticsearch.hosts`` Comma separated list of elasticsearch nodes/servers (mandatory) 
 
 Note: For POP3 only the "INBOX" folder is supported. This is a limitation of the POP3 protocol.
 
