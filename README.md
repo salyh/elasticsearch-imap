@@ -1,19 +1,18 @@
-elasticsearch-river-imap
-========================
+elasticsearch-importer-imap
+==========================
 
-IMAP (and POP3) river for Elasticsearch
-
-_Due to the deprecation of rivers since Elasticsearch 1.5 this river will be rewritten to become a normal plugin. Stay tuned for updates on this_
+IMAP (and POP3) import for Elasticsearch
 
 [![Build Status](https://travis-ci.org/salyh/elasticsearch-river-imap.png?branch=master)](https://travis-ci.org/salyh/elasticsearch-river-imap)
 
 <a href="mailto:hendrikdev22@gmail.com">E-Mail hendrikdev22@gmail.com</a><p>
 <a href="https://twitter.com/hendrikdev22">Twitter @hendrikdev22</a>
 
-This river connects to IMAP4 or POP3 servers, poll your mail and index it. The emails on the server will be never modified or removed from the server.
-The river tracks (after the first initial full load) which mails are new or deleted and then only update the index for this mails.
+This importer connects to IMAP4 or POP3 servers, poll your mail and index it. The emails on the server will be never modified or removed from the server.
+The importer tracks (after the first initial full load) which mails are new or deleted and then only update the index for this mails.
 
 Features:
+
 * Incremental indexing of e-mails from a IMAP or POP3 server
 * Support indexing of attachments (in conjunction with https://github.com/elasticsearch/elasticsearch-mapper-attachments/)
 * Support for UTF-7 encoded e-mails (through jutf7)
@@ -24,23 +23,27 @@ Features:
 * Bulk indexing
 * Works also with Gmail, iCloud, Yahoo, etc. 
 
-The river acts as a disconnected client. This means that the river is polling and for every indexing run a new server connection is opened and, after work is done, closed.
+The importer acts as a disconnected client. This means that the importer is polling and for every indexing run a new server connection is opened and, after work is done, closed.
 
 Branches:
-* master for Elasticsearch 1.2.x/1.3.x/1.4.x/1.5.x
+* master for Elasticsearch 1.2 or higher (not working with ES 2.0 yet)
 
 <h3>Installation</h3> 
 Prerequisites:
+
 * Java 7 or 8
-* Elasticsearch 1.2 or higher
+* Elasticsearch 1.2 or higher (not working with ES 2.0 yet)
 * At least one IMAP4 or POP3 server to connect to
 
-``bin/plugin -i de.saly/elasticsearch-river-imap/0.8.5``
+Download .zip ``https://github.com/salyh/elasticsearch-river-imap/releases`` (only Version 0.8.6 or higher) and unzip them somwhere.
+
+* ``importer.sh <config-file>``
+* ``importer.bat <config-file>``
 
 <h3>Configuration</h3>
-<pre>curl -XPUT 'http://localhost:9200/_river/nameofyourriver/_meta' -d '{
-
-   "type":"imap",
+Put the following configuration in a file and store them somewhere with a extension of .json
+<pre>
+{
    "mail.store.protocol":"imap",
    "mail.imap.host":"imap.server.com",
    "mail.imap.port":993,
@@ -75,11 +78,17 @@ Prerequisites:
    "ldap_password_field" : null,
    "ldap_refresh_interval" : null,
    "master_user" : null,
-   "master_password" : null
+   "master_password" : null,
+   
+   "client.transport.ignore_cluster_name": false,
+   "client.transport.ping_timeout": "5s",
+   "client.transport.nodes_sampler_interval": "5s",
+   "client.transport.sniff": true,
+   "cluster.name": "elasticsearch",
+   "elasticsearch.hosts": "localhost:9300,127.0.0.1:9300"
    
 }'</pre>
 
-* ``type`` - always "imap"
 * ``mail.*`` - see JAVAMail documentation https://javamail.java.net/nonav/docs/api/  (default: none)
 * ``user`` - user name for server login (default: ``null``) - deprecated, use ``users``
 * ``password`` - password for server login (default: ``null``) - deprecated, use ``passwords``
@@ -118,6 +127,9 @@ Prerequisites:
    * ``ldap_refresh_interval`` - Refresh interval in minutes (default:"60"), set to "0" to disable automatic refreshing. If enabled this will automatically refresh the users/passwords from ldap every n minutes.
    * ``master_user`` - For Dovecot, a master user account can be supplied who can access all users' mailboxes, even if their passwords are encrypted (default: null)
    * ``master_password`` -  master user password (default: null)
+   * ``client.transport.*`` see https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/transport-client.html
+   * ``cluster.name`` see https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/transport-client.html
+   * ``elasticsearch.hosts`` Comma separated list of elasticsearch nodes/servers (mandatory) 
 
 Note: For POP3 only the "INBOX" folder is supported. This is a limitation of the POP3 protocol.
 
