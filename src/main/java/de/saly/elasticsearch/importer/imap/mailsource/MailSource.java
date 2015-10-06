@@ -23,34 +23,31 @@
  * $Id:$
  *
  **********************************************************************************************************************/
-package de.saly.elasticsearch.plugin.river.imap;
+package de.saly.elasticsearch.importer.imap.mailsource;
 
-import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.plugins.AbstractPlugin;
-import org.elasticsearch.river.RiversModule;
+import java.io.IOException;
+import java.util.regex.Pattern;
 
-import de.saly.elasticsearch.river.imap.IMAPRiver;
-import de.saly.elasticsearch.river.imap.IMAPRiverModule;
+import javax.mail.MessagingException;
 
-public class IMAPRiverPlugin extends AbstractPlugin {
+import de.saly.elasticsearch.importer.imap.maildestination.MailDestination;
+import de.saly.elasticsearch.importer.imap.state.StateManager;
 
-    @Inject
-    public IMAPRiverPlugin() {
-    }
+public interface MailSource {
 
-    @Override
-    public String description() {
-        return "IMAP River";
-    }
+    public void close();
 
-    @Override
-    public String name() {
-        return IMAPRiver.NAME + "-" + Build.getInstance().getVersion() + "-" + Build.getInstance().getShortHash();
-    }
+    public void fetch(Pattern pattern) throws MessagingException, IOException; // blocks
 
-    // for River
-    public void onModule(final RiversModule module) {
-        module.registerRiver("imap", IMAPRiverModule.class);
-    }
+    public void fetch(String folderName) throws MessagingException, IOException; // blocks
 
+    public void fetchAll() throws MessagingException, IOException; // blocks
+
+    public void setMailDestination(MailDestination mailDestination);
+    
+    public MailDestination getMailDestination();
+
+    public void setStateManager(StateManager stateManager);
+
+    public void setDeleteExpungedMessages(boolean deleteExpungedMessages);
 }

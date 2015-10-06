@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<assembly>
+    <id>uberjar</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>/</outputDirectory>
+            <useProjectArtifact>true</useProjectArtifact>
+            <unpack>false</unpack>
+            <scope>runtime</scope>
+            <includes>
+                <include>de.saly:elasticsearch-importer-imap</include>
+                <include>org.codehaus.jackson</include>
+                <include>org.elasticsearch:elasticsearch</include>
+                <include>org.apache.lucene</include>
+                <include>org.quartz-scheduler</include>
+                <include>commons-io</include>
+                <include>commons-lang</include>
+                <include>com.sun.mail</include>
+                <include>com.beetstra.jutf7</include>
+                <include>com.spatial4j:spatial4j</include>
+                <include>log4j</include>
+                <include>org.slf4j:slf4j-log4j12</include>                
+                <include>org.slf4j:slf4j-api</include>
+            </includes>
+        </dependencySet>
+    </dependencySets>
+</assembly>

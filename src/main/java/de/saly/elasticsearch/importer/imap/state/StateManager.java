@@ -23,31 +23,19 @@
  * $Id:$
  *
  **********************************************************************************************************************/
-package de.saly.elasticsearch.mailsource;
+package de.saly.elasticsearch.importer.imap.state;
 
-import java.io.IOException;
-import java.util.regex.Pattern;
-
+import javax.mail.Folder;
+import javax.mail.Message;
 import javax.mail.MessagingException;
 
-import de.saly.elasticsearch.maildestination.MailDestination;
-import de.saly.elasticsearch.riverstate.RiverStateManager;
+public interface StateManager {
 
-public interface MailSource {
+    public abstract State getRiverState(Folder folder) throws MessagingException;
 
-    public void close();
+    public abstract void onError(String errmsg, Folder folder, Exception e);
 
-    public void fetch(Pattern pattern) throws MessagingException, IOException; // blocks
+    public abstract void onError(String errmsg, Message msg, Exception e);
 
-    public void fetch(String folderName) throws MessagingException, IOException; // blocks
-
-    public void fetchAll() throws MessagingException, IOException; // blocks
-
-    public void setMailDestination(MailDestination mailDestination);
-    
-    public MailDestination getMailDestination();
-
-    public void setStateManager(RiverStateManager stateManager);
-
-    public void setDeleteExpungedMessages(boolean deleteExpungedMessages);
+    public abstract void setRiverState(State state) throws MessagingException;
 }

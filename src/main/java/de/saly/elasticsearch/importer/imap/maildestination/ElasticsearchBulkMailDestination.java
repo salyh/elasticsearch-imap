@@ -23,7 +23,7 @@
  * $Id:$
  *
  **********************************************************************************************************************/
-package de.saly.elasticsearch.maildestination;
+package de.saly.elasticsearch.importer.imap.maildestination;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,7 +39,7 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 
-import de.saly.elasticsearch.support.IndexableMailMessage;
+import de.saly.elasticsearch.importer.imap.support.IndexableMailMessage;
 
 public class ElasticsearchBulkMailDestination extends ElasticsearchMailDestination {
 

@@ -23,7 +23,7 @@
  * $Id:$
  *
  **********************************************************************************************************************/
-package de.saly.elasticsearch.ldap;
+package de.saly.elasticsearch.importer.imap.ldap;
 
 import java.util.ArrayList;
 import java.util.List;

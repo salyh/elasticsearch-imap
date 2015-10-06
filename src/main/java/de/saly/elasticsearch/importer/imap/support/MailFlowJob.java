@@ -23,7 +23,7 @@
  * $Id:$
  *
  **********************************************************************************************************************/
-package de.saly.elasticsearch.support;
+package de.saly.elasticsearch.importer.imap.support;
 
 import java.io.IOException;
 import java.util.regex.Pattern;
@@ -41,8 +41,8 @@ import org.quartz.JobExecutionException;
 import org.quartz.JobKey;
 import org.quartz.UnableToInterruptJobException;
 
-import de.saly.elasticsearch.mailsource.MailSource;
-import de.saly.elasticsearch.river.imap.IMAPRiver;
+import de.saly.elasticsearch.importer.imap.impl.IMAPImporter;
+import de.saly.elasticsearch.importer.imap.mailsource.MailSource;
 
 //Disallow running multiple jobs based on this class at the same time.  
 @DisallowConcurrentExecution
@@ -87,7 +87,7 @@ public class MailFlowJob implements InterruptableJob {
         Client client = (Client) data.get("client");
 
         try {
-            IMAPRiver.waitForYellowCluster(client);
+            IMAPImporter.waitForYellowCluster(client);
             execute();
         } catch (final Exception e) {
             logger.error("Error in mail flow job {}: {} job", e, key.toString(), e.toString());

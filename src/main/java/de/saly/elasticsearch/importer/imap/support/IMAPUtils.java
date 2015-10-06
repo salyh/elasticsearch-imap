@@ -23,7 +23,7 @@
  * $Id:$
  *
  **********************************************************************************************************************/
-package de.saly.elasticsearch.support;
+package de.saly.elasticsearch.importer.imap.support;
 
 import java.util.ArrayList;
 import java.util.List;

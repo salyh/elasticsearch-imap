@@ -23,7 +23,7 @@
  * $Id:$
  *
  **********************************************************************************************************************/
-package de.saly.elasticsearch.maildestination;
+package de.saly.elasticsearch.importer.imap.maildestination;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
@@ -56,8 +56,8 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 
-import de.saly.elasticsearch.river.imap.IMAPRiver;
-import de.saly.elasticsearch.support.IndexableMailMessage;
+import de.saly.elasticsearch.importer.imap.impl.IMAPImporter;
+import de.saly.elasticsearch.importer.imap.support.IndexableMailMessage;
 
 public class ElasticsearchMailDestination implements MailDestination {
 
@@ -380,7 +380,7 @@ public class ElasticsearchMailDestination implements MailDestination {
         }
         
         
-        IMAPRiver.waitForYellowCluster(client);
+        IMAPImporter.waitForYellowCluster(client);
         
         // create index if it doesn't already exist
         if (!client.admin().indices().prepareExists(index).execute().actionGet().isExists()) {
@@ -408,7 +408,7 @@ public class ElasticsearchMailDestination implements MailDestination {
                 throw new IOException("Could not create index " + index);
             }
             
-            IMAPRiver.waitForYellowCluster(client);
+            IMAPImporter.waitForYellowCluster(client);
             
             logger.info("Index {} created", index);
             

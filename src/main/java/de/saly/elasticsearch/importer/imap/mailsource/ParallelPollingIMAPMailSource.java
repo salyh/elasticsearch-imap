@@ -23,7 +23,7 @@
  * $Id:$
  *
  **********************************************************************************************************************/
-package de.saly.elasticsearch.mailsource;
+package de.saly.elasticsearch.importer.imap.mailsource;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -51,10 +51,10 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.indices.IndexMissingException;
 
-import de.saly.elasticsearch.maildestination.MailDestination;
-import de.saly.elasticsearch.riverstate.RiverState;
-import de.saly.elasticsearch.riverstate.RiverStateManager;
-import de.saly.elasticsearch.support.IMAPUtils;
+import de.saly.elasticsearch.importer.imap.maildestination.MailDestination;
+import de.saly.elasticsearch.importer.imap.state.State;
+import de.saly.elasticsearch.importer.imap.state.StateManager;
+import de.saly.elasticsearch.importer.imap.support.IMAPUtils;
 
 public class ParallelPollingIMAPMailSource implements MailSource {
 
@@ -62,7 +62,7 @@ public class ParallelPollingIMAPMailSource implements MailSource {
     private MailDestination mailDestination;
     private final String password;
     private final Properties props;
-    private RiverStateManager stateManager;
+    private StateManager stateManager;
     private final int threadCount;
     private final String user;
     private boolean withFlagSync = true;
@@ -125,7 +125,7 @@ public class ParallelPollingIMAPMailSource implements MailSource {
         return props;
     }
 
-    public RiverStateManager getStateManager() {
+    public StateManager getStateManager() {
         return stateManager;
     }
 
@@ -140,7 +140,7 @@ public class ParallelPollingIMAPMailSource implements MailSource {
     }
 
     @Override
-    public void setStateManager(final RiverStateManager stateManager) {
+    public void setStateManager(final StateManager stateManager) {
         this.stateManager = stateManager;
     }
 
@@ -285,7 +285,7 @@ public class ParallelPollingIMAPMailSource implements MailSource {
 
         final UIDFolder uidfolder = (UIDFolder) folder;
         final long servervalidity = uidfolder.getUIDValidity();
-        final RiverState riverState = stateManager.getRiverState(folder);
+        final State riverState = stateManager.getRiverState(folder);
         final Long localvalidity = riverState.getUidValidity();
 
         logger.info("Fetch mails from folder {} ({})", folder.getURLName().toString(), messageCount);
@@ -469,7 +469,7 @@ public class ParallelPollingIMAPMailSource implements MailSource {
                     logger.debug("{} exists", fol);
                 } else {
                     logger.info("Folder {} does not exist on the server, will remove it (and its content) also locally", fol);
-                    final RiverState riverState = stateManager.getRiverState(store.getFolder(fol));
+                    final State riverState = stateManager.getRiverState(store.getFolder(fol));
                     riverState.setExists(false);
                     stateManager.setRiverState(riverState);
 

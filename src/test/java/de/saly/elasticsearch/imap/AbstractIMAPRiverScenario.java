@@ -29,25 +29,23 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
-import org.elasticsearch.river.RiverName;
-import org.elasticsearch.river.RiverSettings;
 import org.junit.Assert;
 
-import de.saly.elasticsearch.river.imap.IMAPRiver;
+import de.saly.elasticsearch.importer.imap.impl.IMAPImporter;
 
 public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTest {
 
     protected void deleteScenarioIMAP(final String resource, boolean keep_expunged) throws Exception {
 
-        final RiverSettings settings = riverSettings("/" + resource);
+        Map<String, Object> settings = settings("/" + resource);
 
         final Properties props = new Properties();
-        final String indexName = XContentMapValues.nodeStringValue(settings.settings().get("mail_index_name"), "imapriver");
-        final String typeName = XContentMapValues.nodeStringValue(settings.settings().get("mail_type_name"), "mail");
-        final String user = XContentMapValues.nodeStringValue(settings.settings().get("user"), null);
-        final String password = XContentMapValues.nodeStringValue(settings.settings().get("password"), null);
+        final String indexName = XContentMapValues.nodeStringValue(settings.get("mail_index_name"), "imapriver");
+        final String typeName = XContentMapValues.nodeStringValue(settings.get("mail_type_name"), "mail");
+        final String user = XContentMapValues.nodeStringValue(settings.get("user"), null);
+        final String password = XContentMapValues.nodeStringValue(settings.get("password"), null);
 
-        for (final Map.Entry<String, Object> entry : settings.settings().entrySet()) {
+        for (final Map.Entry<String, Object> entry : settings.entrySet()) {
 
             if (entry != null && entry.getKey().startsWith("mail.")) {
                 props.setProperty(entry.getKey(), String.valueOf(entry.getValue()));
@@ -89,15 +87,15 @@ public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTes
 
     protected void deleteScenarioPOP(final String resource) throws Exception {
 
-        final RiverSettings settings = riverSettings("/" + resource);
+        Map<String, Object> settings = settings("/" + resource);
 
         final Properties props = new Properties();
-        final String indexName = XContentMapValues.nodeStringValue(settings.settings().get("mail_index_name"), "imapriver");
-        final String typeName = XContentMapValues.nodeStringValue(settings.settings().get("mail_type_name"), "mail");
-        final String user = XContentMapValues.nodeStringValue(settings.settings().get("user"), null);
-        final String password = XContentMapValues.nodeStringValue(settings.settings().get("password"), null);
+        final String indexName = XContentMapValues.nodeStringValue(settings.get("mail_index_name"), "imapriver");
+        final String typeName = XContentMapValues.nodeStringValue(settings.get("mail_type_name"), "mail");
+        final String user = XContentMapValues.nodeStringValue(settings.get("user"), null);
+        final String password = XContentMapValues.nodeStringValue(settings.get("password"), null);
 
-        for (final Map.Entry<String, Object> entry : settings.settings().entrySet()) {
+        for (final Map.Entry<String, Object> entry : settings.entrySet()) {
 
             if (entry != null && entry.getKey().startsWith("mail.")) {
                 props.setProperty(entry.getKey(), String.valueOf(entry.getValue()));
@@ -134,8 +132,8 @@ public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTes
 
         putMailInMailbox(50);
 
-        final RiverSettings settings = riverSettings("/" + resource);
-        final IMAPRiver river = new IMAPRiver(new RiverName("a", "b"), settings, esSetup.client());
+        Map<String, Object> settings = settings("/" + resource);
+        final IMAPImporter river = new IMAPImporter(settings, esSetup.client());
 
         river.start();
 
@@ -153,8 +151,8 @@ public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTes
 
     protected void plainScenario(final String resource) throws Exception {
 
-        final RiverSettings settings = riverSettings("/" + resource);
-        final IMAPRiver river = new IMAPRiver(new RiverName("a", "b"), settings, esSetup.client());
+        Map<String, Object> settings = settings("/" + resource);
+        final IMAPImporter river = new IMAPImporter(settings, esSetup.client());
         river.start();
 
         Thread.sleep(100);
@@ -175,8 +173,8 @@ public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTes
     
     protected void plainScenarioMulti(final String resource) throws Exception {
 
-        final RiverSettings settings = riverSettings("/" + resource);
-        final IMAPRiver river = new IMAPRiver(new RiverName("a", "b"), settings, esSetup.client());
+        Map<String, Object> settings = settings("/" + resource);
+        final IMAPImporter river = new IMAPImporter(settings, esSetup.client());
         river.start();
 
         Thread.sleep(100);
@@ -201,8 +199,8 @@ public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTes
 
     protected void plainScenarioOnce(final String resource) throws Exception {
 
-        final RiverSettings settings = riverSettings("/" + resource);
-        final IMAPRiver river = new IMAPRiver(new RiverName("a", "b"), settings, esSetup.client());
+        Map<String, Object> settings = settings("/" + resource);
+        final IMAPImporter river = new IMAPImporter(settings, esSetup.client());
         river.once();
 
         putMailInMailbox(50);
@@ -223,8 +221,8 @@ public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTes
 
     protected void plainScenarioOnceNoFirstRun(final String resource) throws Exception {
 
-        final RiverSettings settings = riverSettings("/" + resource);
-        final IMAPRiver river = new IMAPRiver(new RiverName("a", "b"), settings, esSetup.client());
+        Map<String, Object> settings = settings("/" + resource);
+        final IMAPImporter river = new IMAPImporter(settings, esSetup.client());
 
         putMailInMailbox(50);
 
@@ -244,8 +242,8 @@ public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTes
 
     protected void realIntegrationInteractive(final String resource) throws Exception {
 
-        final RiverSettings settings = riverSettings("/" + resource);
-        final IMAPRiver river = new IMAPRiver(new RiverName("a", "b"), settings, esSetup.client());
+        Map<String, Object> settings = settings("/" + resource);
+        final IMAPImporter river = new IMAPImporter(settings, esSetup.client());
 
         river.start();
 
@@ -261,15 +259,15 @@ public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTes
 
     protected void renameScenarioIMAP(final String resource) throws Exception {
 
-        final RiverSettings settings = riverSettings("/" + resource);
+        Map<String, Object> settings = settings("/" + resource);
 
         final Properties props = new Properties();
-        final String indexName = XContentMapValues.nodeStringValue(settings.settings().get("mail_index_name"), "imapriver");
-        final String typeName = XContentMapValues.nodeStringValue(settings.settings().get("mail_type_name"), "mail");
-        final String user = XContentMapValues.nodeStringValue(settings.settings().get("user"), null);
-        final String password = XContentMapValues.nodeStringValue(settings.settings().get("password"), null);
+        final String indexName = XContentMapValues.nodeStringValue(settings.get("mail_index_name"), "imapriver");
+        final String typeName = XContentMapValues.nodeStringValue(settings.get("mail_type_name"), "mail");
+        final String user = XContentMapValues.nodeStringValue(settings.get("user"), null);
+        final String password = XContentMapValues.nodeStringValue(settings.get("password"), null);
 
-        for (final Map.Entry<String, Object> entry : settings.settings().entrySet()) {
+        for (final Map.Entry<String, Object> entry : settings.entrySet()) {
 
             if (entry != null && entry.getKey().startsWith("mail.")) {
                 props.setProperty(entry.getKey(), String.valueOf(entry.getValue()));
@@ -301,8 +299,8 @@ public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTes
     
     protected void twoRiversScenario(final String resource1, final String resource2) throws Exception {
 
-        final RiverSettings settings1 = riverSettings("/" + resource1);
-        final RiverSettings settings2 = riverSettings("/" + resource2);
+        Map<String, Object> settings1 = settings("/" + resource1);
+        Map<String, Object> settings2 = settings("/" + resource2);
         
         putMailInMailbox(5);
         
@@ -311,8 +309,8 @@ public abstract class AbstractIMAPRiverScenario extends AbstractIMAPRiverUnitTes
         registerRiver("secondriver", resource2);
         Thread.sleep(6000);
          
-        Assert.assertNotNull(statusRiver(XContentMapValues.nodeStringValue(settings1.settings().get("mail_index_name"), null)));
-        Assert.assertNotNull(statusRiver(XContentMapValues.nodeStringValue(settings2.settings().get("mail_index_name"), null)));
+        Assert.assertNotNull(statusRiver(XContentMapValues.nodeStringValue(settings1.get("mail_index_name"), null)));
+        Assert.assertNotNull(statusRiver(XContentMapValues.nodeStringValue(settings2.get("mail_index_name"), null)));
        
     }
 

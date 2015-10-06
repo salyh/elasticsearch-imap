@@ -22,11 +22,10 @@ import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.river.RiverSettings;
 import org.junit.Assert;
 import org.junit.Test;
 
-import de.saly.elasticsearch.support.IMAPUtils;
+import de.saly.elasticsearch.importer.imap.support.IMAPUtils;
 
 public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 
@@ -40,13 +39,13 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 	@Test
 	public void testAttachments() throws Exception{
 
-		final RiverSettings settings = riverSettings("/river-imap-attachments.json");
+	        Map<String, Object> settings = settings("/river-imap-attachments.json");
 
 		final Properties props = new Properties();
-		final String user = XContentMapValues.nodeStringValue(settings.settings().get("user"), null);
-		final String password = XContentMapValues.nodeStringValue(settings.settings().get("password"), null);
+		final String user = XContentMapValues.nodeStringValue(settings.get("user"), null);
+		final String password = XContentMapValues.nodeStringValue(settings.get("password"), null);
 
-		for (final Map.Entry<String, Object> entry : settings.settings().entrySet()) {
+		for (final Map.Entry<String, Object> entry : settings.entrySet()) {
 
 			if (entry != null && entry.getKey().startsWith("mail.")) {
 				props.setProperty(entry.getKey(), String.valueOf(entry.getValue()));
@@ -110,13 +109,13 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 	@Test
 	public void testAttachments2() throws Exception{
 
-		final RiverSettings settings = riverSettings("/river-imap-attachments-2.json");
+	        Map<String, Object> settings = settings("/river-imap-attachments-2.json");
 
 		final Properties props = new Properties();
-		final String user = XContentMapValues.nodeStringValue(settings.settings().get("user"), null);
-		final String password = XContentMapValues.nodeStringValue(settings.settings().get("password"), null);
+		final String user = XContentMapValues.nodeStringValue(settings.get("user"), null);
+		final String password = XContentMapValues.nodeStringValue(settings.get("password"), null);
 
-		for (final Map.Entry<String, Object> entry : settings.settings().entrySet()) {
+		for (final Map.Entry<String, Object> entry : settings.entrySet()) {
 
 			if (entry != null && entry.getKey().startsWith("mail.")) {
 				props.setProperty(entry.getKey(), String.valueOf(entry.getValue()));
@@ -196,13 +195,13 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 	@Test
 	public void testAttachments3() throws Exception{
 
-		final RiverSettings settings = riverSettings("/river-imap-attachments-3.json");
+	        Map<String, Object> settings = settings("/river-imap-attachments-3.json");
 
 		final Properties props = new Properties();
-		final String user = XContentMapValues.nodeStringValue(settings.settings().get("user"), null);
-		final String password = XContentMapValues.nodeStringValue(settings.settings().get("password"), null);
+		final String user = XContentMapValues.nodeStringValue(settings.get("user"), null);
+		final String password = XContentMapValues.nodeStringValue(settings.get("password"), null);
 
-		for (final Map.Entry<String, Object> entry : settings.settings().entrySet()) {
+		for (final Map.Entry<String, Object> entry : settings.entrySet()) {
 
 			if (entry != null && entry.getKey().startsWith("mail.")) {
 				props.setProperty(entry.getKey(), String.valueOf(entry.getValue()));

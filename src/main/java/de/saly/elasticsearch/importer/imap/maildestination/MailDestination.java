@@ -23,19 +23,31 @@
  * $Id:$
  *
  **********************************************************************************************************************/
-package de.saly.elasticsearch.riverstate;
+package de.saly.elasticsearch.importer.imap.maildestination;
 
-import javax.mail.Folder;
+import java.io.IOException;
+import java.util.Set;
+
 import javax.mail.Message;
 import javax.mail.MessagingException;
 
-public interface RiverStateManager {
+public interface MailDestination {
 
-    public abstract RiverState getRiverState(Folder folder) throws MessagingException;
+    public abstract void clearDataForFolder(String folderName) throws IOException, MessagingException;
 
-    public abstract void onError(String errmsg, Folder folder, Exception e);
+    public abstract void close();
 
-    public abstract void onError(String errmsg, Message msg, Exception e);
+    @SuppressWarnings("rawtypes")
+    public abstract Set getCurrentlyStoredMessageUids(String folderName, boolean isPop) throws IOException, MessagingException;
 
-    public abstract void setRiverState(RiverState state) throws MessagingException;
+    public int getFlaghashcode(String id) throws IOException, MessagingException;
+
+    public abstract Set<String> getFolderNames() throws IOException, MessagingException;
+
+    public abstract void onMessage(Message msg) throws IOException, MessagingException;
+
+    @SuppressWarnings("rawtypes")
+    public abstract void onMessageDeletes(Set msgs, String folderName, boolean isPop) throws IOException, MessagingException;
+
+    public abstract ElasticsearchMailDestination startup() throws IOException;
 }

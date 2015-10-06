@@ -23,7 +23,7 @@
  * $Id:$
  *
  **********************************************************************************************************************/
-package de.saly.elasticsearch.ldap;
+package de.saly.elasticsearch.importer.imap.ldap;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.directory.DirContext;

@@ -33,6 +33,7 @@ import java.io.StringWriter;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.mail.Flags.Flag;
@@ -45,6 +46,7 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 import org.apache.commons.io.IOUtils;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
@@ -52,17 +54,13 @@ import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.count.CountRequest;
 import org.elasticsearch.action.count.CountResponse;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.ImmutableSettings.Builder;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.xcontent.XContentHelper;
-import org.elasticsearch.river.RiverSettings;
 import org.elasticsearch.search.SearchHit;
 import org.junit.After;
 import org.junit.Before;
@@ -71,10 +69,13 @@ import org.junit.rules.TestName;
 
 import com.github.tlrx.elasticsearch.test.EsSetup;
 
-import de.saly.elasticsearch.support.IMAPUtils;
+import de.saly.elasticsearch.importer.imap.impl.IMAPImporter;
+import de.saly.elasticsearch.importer.imap.support.IMAPUtils;
 import de.saly.javamail.mock2.MockMailbox;
 
 public abstract class AbstractIMAPRiverUnitTest {
+    
+    protected static final ObjectMapper MAPPER = new ObjectMapper();
 
     private static int SID;
     protected static final String EMAIL_SUBJECT = "SID";
@@ -98,6 +99,7 @@ public abstract class AbstractIMAPRiverUnitTest {
     protected EsSetup esSetup;
     protected EsSetup esSetup2;
     protected EsSetup esSetup3;
+    private IMAPImporter imapRiver;
     
     protected final ESLogger logger = ESLoggerFactory.getLogger(this.getClass().getName());
 
@@ -111,7 +113,7 @@ public abstract class AbstractIMAPRiverUnitTest {
     }
     
     
-    protected Builder getSettingsBuilder(boolean dataNode, boolean masterNode, boolean riverEnabled) {
+    protected Builder getSettingsBuilder(boolean dataNode, boolean masterNode) {
         Builder builder = ImmutableSettings
         .settingsBuilder()
         // .put(NODE_NAME, elasticsearchNode.name())
@@ -125,18 +127,9 @@ public abstract class AbstractIMAPRiverUnitTest {
         .put("http.enabled", false)
         .put("node.local", true)
         .put("node.master", masterNode)
-       
-        
-         
         .put(getProperties());
-        
-        
-        if(!riverEnabled) {
-            builder.put("node.river", "_none_");
-        }
-        
-        return builder;
-
+         builder.put("node.river", "_none_");
+         return builder;
     }
 
     @Before
@@ -148,9 +141,9 @@ public abstract class AbstractIMAPRiverUnitTest {
 
         // Instantiates a local node & client
 
-        esSetup = new EsSetup(getSettingsBuilder(false, true, false).build());
-        esSetup2 = new EsSetup(getSettingsBuilder(true, false, false).build());
-        esSetup3 = new EsSetup(getSettingsBuilder(false, true, true).build());
+        esSetup = new EsSetup(getSettingsBuilder(false, true).build());
+        esSetup2 = new EsSetup(getSettingsBuilder(true, false).build());
+        esSetup3 = new EsSetup(getSettingsBuilder(false, true).build());
         // Clean all, and creates some indices
 
         esSetup.execute(
@@ -180,6 +173,10 @@ public abstract class AbstractIMAPRiverUnitTest {
 
         System.out.println("--------------------- TEARDOWN " + name.getMethodName() + " -------------------------------------");
 
+        if(imapRiver != null) {
+            imapRiver.close();
+        }
+        
         if (esSetup != null) {
             esSetup.terminate();
         }
@@ -377,11 +374,8 @@ public abstract class AbstractIMAPRiverUnitTest {
     }
 
     protected void registerRiver(final String typename, final String file) throws ElasticsearchException, IOException {
-        final IndexResponse res = esSetup.client().prepareIndex().setRefresh(true).setIndex("_river").setType(typename).setId("_meta")
-                .setSource(loadFile(file)).execute().actionGet();
-        if (!res.isCreated()) {
-            throw new IOException("Unable to register river");
-        }
+        imapRiver = new IMAPImporter(MAPPER.readValue(loadFile(file), Map.class), esSetup.client());
+        imapRiver.start();
     }
     
     protected SearchHit statusRiver(final String index) throws ElasticsearchException, IOException {
@@ -410,10 +404,9 @@ public abstract class AbstractIMAPRiverUnitTest {
 
     }
 
-    protected RiverSettings riverSettings(final String resource) throws IOException {
+    protected Map<String, Object> settings(final String resource) throws IOException {
         final InputStream in = this.getClass().getResourceAsStream(resource);
-        return new RiverSettings(ImmutableSettings.settingsBuilder().build(), XContentHelper.convertToMap(Streams.copyToByteArray(in),
-                false).v2());
+        return MAPPER.readValue(in, Map.class);
     }
     
     protected void waitForGreenClusterState(final Client client) throws IOException {

@@ -23,7 +23,7 @@
  * $Id:$
  *
  **********************************************************************************************************************/
-package de.saly.elasticsearch.mailsource;
+package de.saly.elasticsearch.importer.imap.mailsource;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -52,10 +52,10 @@ import org.elasticsearch.indices.IndexMissingException;
 
 import com.sun.mail.pop3.POP3Folder;
 
-import de.saly.elasticsearch.maildestination.MailDestination;
-import de.saly.elasticsearch.riverstate.RiverState;
-import de.saly.elasticsearch.riverstate.RiverStateManager;
-import de.saly.elasticsearch.support.IMAPUtils;
+import de.saly.elasticsearch.importer.imap.maildestination.MailDestination;
+import de.saly.elasticsearch.importer.imap.state.State;
+import de.saly.elasticsearch.importer.imap.state.StateManager;
+import de.saly.elasticsearch.importer.imap.support.IMAPUtils;
 
 public class ParallelPollingPOPMailSource implements MailSource {
 
@@ -63,7 +63,7 @@ public class ParallelPollingPOPMailSource implements MailSource {
     private MailDestination mailDestination;
     private final String password;
     private final Properties props;
-    private RiverStateManager stateManager;
+    private StateManager stateManager;
     private final int threadCount;
     private final String user;
     protected final ESLogger logger = ESLoggerFactory.getLogger(this.getClass().getName());
@@ -124,7 +124,7 @@ public class ParallelPollingPOPMailSource implements MailSource {
         return props;
     }
 
-    public RiverStateManager getStateManager() {
+    public StateManager getStateManager() {
         return stateManager;
     }
 
@@ -139,7 +139,7 @@ public class ParallelPollingPOPMailSource implements MailSource {
     }
 
     @Override
-    public void setStateManager(final RiverStateManager stateManager) {
+    public void setStateManager(final StateManager stateManager) {
         this.stateManager = stateManager;
     }
     
@@ -261,7 +261,7 @@ public class ParallelPollingPOPMailSource implements MailSource {
 
         final int messageCount = folder.getMessageCount(); // can change during
                                                            // method
-        final RiverState riverState = stateManager.getRiverState(folder);
+        final State riverState = stateManager.getRiverState(folder);
 
         logger.info("Fetch mails from folder {} ({})", folder.getURLName().toString(), messageCount);
 

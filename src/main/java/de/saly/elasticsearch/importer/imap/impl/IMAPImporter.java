@@ -23,7 +23,7 @@
  * $Id:$
  *
  **********************************************************************************************************************/
-package de.saly.elasticsearch.river.imap;
+package de.saly.elasticsearch.importer.imap.impl;
 
 import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.JobBuilder.newJob;
@@ -45,15 +45,10 @@ import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
-import org.elasticsearch.river.AbstractRiverComponent;
-import org.elasticsearch.river.River;
-import org.elasticsearch.river.RiverName;
-import org.elasticsearch.river.RiverSettings;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
@@ -61,22 +56,18 @@ import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.impl.StdSchedulerFactory;
 
-import de.saly.elasticsearch.ldap.ILoginSource;
-import de.saly.elasticsearch.ldap.LdapLoginSource;
-import de.saly.elasticsearch.maildestination.ElasticsearchBulkMailDestination;
-import de.saly.elasticsearch.maildestination.MailDestination;
-import de.saly.elasticsearch.mailsource.MailSource;
-import de.saly.elasticsearch.mailsource.ParallelPollingIMAPMailSource;
-import de.saly.elasticsearch.mailsource.ParallelPollingPOPMailSource;
-import de.saly.elasticsearch.riverstate.ElasticsearchRiverStateManager;
-import de.saly.elasticsearch.riverstate.RiverStateManager;
-import de.saly.elasticsearch.support.MailFlowJob;
+import de.saly.elasticsearch.importer.imap.ldap.ILoginSource;
+import de.saly.elasticsearch.importer.imap.ldap.LdapLoginSource;
+import de.saly.elasticsearch.importer.imap.maildestination.ElasticsearchBulkMailDestination;
+import de.saly.elasticsearch.importer.imap.maildestination.MailDestination;
+import de.saly.elasticsearch.importer.imap.mailsource.MailSource;
+import de.saly.elasticsearch.importer.imap.mailsource.ParallelPollingIMAPMailSource;
+import de.saly.elasticsearch.importer.imap.mailsource.ParallelPollingPOPMailSource;
+import de.saly.elasticsearch.importer.imap.state.ElasticsearchStateManager;
+import de.saly.elasticsearch.importer.imap.state.StateManager;
+import de.saly.elasticsearch.importer.imap.support.MailFlowJob;
 
-public class IMAPRiver extends AbstractRiverComponent implements River {
-
-    public final static String NAME = "river-imap";
-
-    public final static String TYPE = "imap";
+public class IMAPImporter {
 
     private volatile boolean closed;
 
@@ -88,7 +79,7 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
 
     private final TimeValue interval;
 
-    private static final ESLogger logger = ESLoggerFactory.getLogger(IMAPRiver.class.getName());
+    private static final ESLogger logger = ESLoggerFactory.getLogger(IMAPImporter.class.getName());
 
     private final List<MailSource> mailSources = new ArrayList<MailSource>();
 
@@ -110,13 +101,9 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
 
     private final List<String> headersToFields;
 
-    @Inject
-    public IMAPRiver(final RiverName riverName, final RiverSettings riverSettings, final Client client) {
-        super(riverName, riverSettings);
+    public IMAPImporter(final Map<String, Object> imapSettings, final Client client) {
         
         this.client = client;
-
-        final Map<String, Object> imapSettings = settings.settings();
 
         getUserLogins(imapSettings);
 
@@ -199,7 +186,7 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
                 _indexName = indexName+"-"+user.split("@")[0];
             }
             
-            RiverStateManager riverStateManager = new ElasticsearchRiverStateManager().client(client).index(_indexName);
+            StateManager riverStateManager = new ElasticsearchStateManager().client(client).index(_indexName);
             
             MailSource mailSource = null;
             
@@ -220,10 +207,9 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
             mailSources.add(mailSource);
             indices.add(_indexName);
         }
-        logger.info("IMAPRiver created, river name: {}", riverName.getName());
+        logger.info("IMAPRiver created");
     }
 
-    @Override
     public void close() {
 
         if (closed) {
@@ -285,7 +271,6 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
         }
     }
 
-    @Override
     public void start() {
         logger.info("Start IMAPRiver ...");
 
@@ -344,7 +329,7 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
             logger.info("IMAPRiver started");
 
         } catch (final Exception e) {
-            logger.error("Unable to start IMAPRiver '"+riverName.getName()+"' due to " + e, e);
+            logger.error("Unable to start IMAPRiver due to " + e, e);
         }
 
     }

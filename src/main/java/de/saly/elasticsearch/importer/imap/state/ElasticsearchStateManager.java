@@ -23,7 +23,7 @@
  * $Id:$
  *
  **********************************************************************************************************************/
-package de.saly.elasticsearch.riverstate;
+package de.saly.elasticsearch.importer.imap.state;
 
 import java.io.IOException;
 
@@ -43,7 +43,7 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.unit.TimeValue;
 
-public class ElasticsearchRiverStateManager implements RiverStateManager {
+public class ElasticsearchStateManager implements StateManager {
 
     private static final String ERRORS_ID = "errors";
     private static final String FOLDERSTATE_ID = "folderstate";
@@ -53,13 +53,13 @@ public class ElasticsearchRiverStateManager implements RiverStateManager {
     private final ObjectMapper mapper = new ObjectMapper();
     protected final ESLogger logger = ESLoggerFactory.getLogger(this.getClass().getName());
 
-    public ElasticsearchRiverStateManager client(final Client client) {
+    public ElasticsearchStateManager client(final Client client) {
         this.client = client;
         return this;
     }
 
     @Override
-    public synchronized RiverState getRiverState(final Folder folder) throws MessagingException {
+    public synchronized State getRiverState(final Folder folder) throws MessagingException {
 
         try {
 
@@ -72,7 +72,7 @@ public class ElasticsearchRiverStateManager implements RiverStateManager {
                         .get();
 
                 if (!response.isSourceEmpty()) {
-                    return mapper.readValue(response.getSourceAsString(), new TypeReference<RiverState>() {
+                    return mapper.readValue(response.getSourceAsString(), new TypeReference<State>() {
                     });
 
                 }
@@ -81,7 +81,7 @@ public class ElasticsearchRiverStateManager implements RiverStateManager {
             throw new MessagingException("Unable to get river state", ex);
         }
 
-        final RiverState rs = new RiverState();
+        final State rs = new State();
         rs.setFolderUrl(folder.getURLName().toString());
         // rs.setLastUid(1L);
         rs.setExists(true);
@@ -93,7 +93,7 @@ public class ElasticsearchRiverStateManager implements RiverStateManager {
         return index;
     }
 
-    public ElasticsearchRiverStateManager index(final String index) {
+    public ElasticsearchStateManager index(final String index) {
         this.index = index;
         return this;
     }
@@ -130,7 +130,7 @@ public class ElasticsearchRiverStateManager implements RiverStateManager {
     }
 
     @Override
-    public void setRiverState(final RiverState state) throws MessagingException {
+    public void setRiverState(final State state) throws MessagingException {
 
         try {
             logger.debug("set riverstate " + state);

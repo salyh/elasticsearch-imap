@@ -23,7 +23,7 @@
  * $Id:$
  *
  **********************************************************************************************************************/
-package de.saly.elasticsearch.support;
+package de.saly.elasticsearch.importer.imap.support;
 
 import java.io.IOException;
 import java.io.InputStream;

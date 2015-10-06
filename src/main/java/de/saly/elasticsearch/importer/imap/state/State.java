@@ -23,11 +23,11 @@
  * $Id:$
  *
  **********************************************************************************************************************/
-package de.saly.elasticsearch.riverstate;
+package de.saly.elasticsearch.importer.imap.state;
 
 import java.util.Date;
 
-public class RiverState {
+public class State {
 
     private boolean exists;
 
@@ -56,7 +56,7 @@ public class RiverState {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final RiverState other = (RiverState) obj;
+        final State other = (State) obj;
         if (folderUrl == null) {
             if (other.folderUrl != null) {
                 return false;
