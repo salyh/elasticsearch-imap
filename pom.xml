@@ -9,7 +9,7 @@
 
 	<groupId>de.saly</groupId>
 	<artifactId>elasticsearch-importer-imap</artifactId>
-	<version>0.9-beta</version>
+	<version>0.9-beta2-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<description>IMAP (and POP3) importer for Elasticsearch</description>
 	<inceptionYear>2014</inceptionYear>
@@ -40,7 +40,7 @@
 		<url>https://github.com/salyh/elasticsearch-river-imap</url>
 		<connection>scm:git:git@github.com:salyh/elasticsearch-river-imap.git</connection>
 		<developerConnection>scm:git:git@github.com:salyh/elasticsearch-river-imap.git</developerConnection>
-	  <tag>v0.9-beta</tag>
+	  <tag>HEAD</tag>
   </scm>
 
 
