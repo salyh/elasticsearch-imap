@@ -1,6 +1,8 @@
 elasticsearch-importer-imap
 ==========================
 
+This version is for Elasticsearch 1.x. For ES 2.0 look here https://github.com/salyh/elasticsearch-river-imap/tree/es2.0
+
 IMAP (and POP3) import for Elasticsearch
 
 [![Build Status](https://travis-ci.org/salyh/elasticsearch-river-imap.png?branch=master)](https://travis-ci.org/salyh/elasticsearch-river-imap)
