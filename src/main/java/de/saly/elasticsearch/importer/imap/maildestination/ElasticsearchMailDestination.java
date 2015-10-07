@@ -57,6 +57,7 @@ import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 
 import de.saly.elasticsearch.importer.imap.impl.IMAPImporter;
+import de.saly.elasticsearch.importer.imap.support.DeleteByQuery;
 import de.saly.elasticsearch.importer.imap.support.IndexableMailMessage;
 
 public class ElasticsearchMailDestination implements MailDestination {
@@ -102,10 +103,9 @@ public class ElasticsearchMailDestination implements MailDestination {
         
         client.admin().indices().refresh(new RefreshRequest()).actionGet();
         
-        //client.prepareDeleteByQuery(index).setTypes(type).setQuery(QueryBuilders.termQuery("folderFullName", folderName)).execute()
-        //        .actionGet();
-        
-       //FIXME TODO 2.0 prepareDeleteByQuery
+        DeleteByQuery.deleteByQuery(client, index, new String[]{type}, QueryBuilders.termQuery("folderFullName", folderName));
+
+       //TODO check delete by query result
 
     }
 
@@ -296,14 +296,15 @@ public class ElasticsearchMailDestination implements MailDestination {
         final BoolQueryBuilder query = new BoolQueryBuilder();
 
         if (isPop) {
-            //query.must(QueryBuilders.inQuery("popId", msgs)); //FIXME TODO 2.0 in query
+            query.must(QueryBuilders.termsQuery("popId", msgs));
         } else {
-            //query.must(QueryBuilders.inQuery("uid", msgs)); //FIXME TODO 2.0 in query
+            query.must(QueryBuilders.termsQuery("uid", msgs));
         }
 
         query.must(QueryBuilders.termQuery("folderFullName", folderName));
 
-        //client.prepareDeleteByQuery(index).setTypes(type).setQuery(query).execute().actionGet(); //FIXME TODO 2.0 prepareDeleteByQuery
+        DeleteByQuery.deleteByQuery(client, index, new String[]{type}, query);
+        //TODO check delete by query result
 
     }
 
@@ -439,7 +440,9 @@ public class ElasticsearchMailDestination implements MailDestination {
 
         final String id = (!StringUtils.isEmpty(message.getPopId()) ? message.getPopId() : message.getUid()) + "::"
                 + message.getFolderUri();
-
+        
+        System.out.println("Message: "+message.build());
+        
         final IndexRequest request = Requests.indexRequest(index).type(type).id(id).source(message.build());
 
         return request;

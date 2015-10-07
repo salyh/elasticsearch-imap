@@ -30,7 +30,7 @@
 	</licenses>
 
 	<properties>
-		<elasticsearch.version>2.0.0-beta2</elasticsearch.version>
+		<elasticsearch.version>2.0.0-rc1</elasticsearch.version>
 		<github.global.server>github</github.global.server>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>

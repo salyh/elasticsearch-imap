@@ -59,6 +59,7 @@ import org.quartz.impl.StdSchedulerFactory;
 import de.saly.elasticsearch.importer.imap.ldap.ILoginSource;
 import de.saly.elasticsearch.importer.imap.ldap.LdapLoginSource;
 import de.saly.elasticsearch.importer.imap.maildestination.ElasticsearchBulkMailDestination;
+import de.saly.elasticsearch.importer.imap.maildestination.ElasticsearchMailDestination;
 import de.saly.elasticsearch.importer.imap.maildestination.MailDestination;
 import de.saly.elasticsearch.importer.imap.mailsource.MailSource;
 import de.saly.elasticsearch.importer.imap.mailsource.ParallelPollingIMAPMailSource;
@@ -190,8 +191,13 @@ public class IMAPImporter {
             
             MailSource mailSource = null;
             
-            MailDestination mailDestination = new ElasticsearchBulkMailDestination().maxBulkActions(bulkSize).maxConcurrentBulkRequests(maxBulkRequests)
+            /*MailDestination mailDestination = new ElasticsearchBulkMailDestination().maxBulkActions(bulkSize).maxConcurrentBulkRequests(maxBulkRequests)
                     .flushInterval(flushInterval).client(client).setMapping(typeMapping).setSettings(indexSettings).setType(typeName) //+user???
+                    .setIndex(_indexName).setWithAttachments(withAttachments).setWithTextContent(withTextContent).setWithHtmlContent(withHtmlContent)
+                    .setPreferHtmlContent(preferHtmlContent).setStripTagsFromTextContent(stripTagsFromTextContent).setHeadersToFields(headersToFields);
+            */
+            MailDestination mailDestination = new ElasticsearchMailDestination()
+                    .client(client).setMapping(typeMapping).setSettings(indexSettings).setType(typeName) //+user???
                     .setIndex(_indexName).setWithAttachments(withAttachments).setWithTextContent(withTextContent).setWithHtmlContent(withHtmlContent)
                     .setPreferHtmlContent(preferHtmlContent).setStripTagsFromTextContent(stripTagsFromTextContent).setHeadersToFields(headersToFields);
 

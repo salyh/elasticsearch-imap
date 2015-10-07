@@ -25,6 +25,7 @@
  **********************************************************************************************************************/
 package de.saly.elasticsearch.imap;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -43,6 +44,7 @@ import javax.mail.Store;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.ElasticsearchException;
@@ -111,17 +113,21 @@ public abstract class AbstractIMAPRiverUnitTest {
     
     
     protected Settings.Builder getSettingsBuilder(boolean dataNode, boolean masterNode) {
+        
+        boolean local = true;
+        
         Settings.Builder builder = Settings
         .settingsBuilder()
         .put("path.home", ".")
         .put("cluster.name", "imapriver_testcluster")
         .put("index.store.fs.memory.enabled", "true")
         .put("path.data", "target/data").put("path.work", "target/work").put("path.logs", "target/logs")
-        .put("path.conf", "target/config").put("path.plugins", "target/plugins").put("index.number_of_shards", "5")
+        .put("path.conf", "target/config").put("plugin.types", "org.elasticsearch.plugin.mapper.attachments.MapperAttachmentsPlugin").put("index.number_of_shards", "5")
         .put("index.number_of_replicas", "0")
         .put("node.data", dataNode)
-        .put("http.enabled", false)
-        .put("node.local", true)
+        .put("http.enabled", !local)
+        .put("node.local", local)
+        .put("http.cors.enabled", !local)
         .put("node.master", masterNode)
         .put(getProperties());
          return builder;
@@ -132,6 +138,8 @@ public abstract class AbstractIMAPRiverUnitTest {
 
         System.out.println("--------------------- SETUP " + name.getMethodName() + " -------------------------------------");
 
+        FileUtils.deleteQuietly(new File("target/data/"));
+        
         MockMailbox.resetAll();
 
         // Instantiates a local node & client
@@ -165,6 +173,7 @@ public abstract class AbstractIMAPRiverUnitTest {
             esSetup3.close();
         }
 
+        FileUtils.deleteQuietly(new File("target/data/"));
     }
 
     protected void checkStoreForTestConnection(final Store store) {
@@ -278,8 +287,8 @@ public abstract class AbstractIMAPRiverUnitTest {
     }
     
     protected long getCount(final List<String> indices, final String type) {
-        logger.debug("getCount() for {}", indices);
-
+        logger.debug("getCount() for index {} and type", indices, type);
+        
         esSetup.client().admin().indices().refresh(new RefreshRequest()).actionGet();
 
         long count = 0;
@@ -287,10 +296,10 @@ public abstract class AbstractIMAPRiverUnitTest {
         for (Iterator<String> iterator = indices.iterator(); iterator.hasNext();) {
             String index = (String) iterator.next();
              long lcount = esSetup.client().count(new CountRequest(index).types(type)).actionGet().getCount();
-             logger.debug("Count for index {} is {}", index, lcount);
+             logger.debug("Count for index {} (type {}) is {}", index, type, lcount);
              count += lcount;
         }
-                
+
         return count;
     }
 
