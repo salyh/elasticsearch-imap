@@ -88,9 +88,7 @@ public class ElasticsearchBulkMailDestination extends ElasticsearchMailDestinati
         super.client(client);
 
         bulk = BulkProcessor.builder(client, listener)
-                .setBulkActions(maxBulkActions - 1)
-                // offset by one for es < 1.1.0, for >= 1.1.0 offset by zero
-                // //TODO offset by es version
+                .setBulkActions(maxBulkActions)
                 .setConcurrentRequests(maxConcurrentBulkRequests).setBulkSize(maxVolumePerBulkRequest).setFlushInterval(flushInterval)
                 .build();
         return this;

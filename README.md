@@ -26,6 +26,7 @@ Features:
 The importer acts as a disconnected client. This means that the importer is polling and for every indexing run a new server connection is opened and, after work is done, closed.
 
 Branches:
+
 * master for Elasticsearch 1.2 or higher (not working with ES 2.0 yet)
 
 <h3>Installation</h3> 
@@ -40,8 +41,8 @@ Download .zip or .tar.gz from https://github.com/salyh/elasticsearch-river-imap/
 Then run
 
 * ``bin/importer.sh [-e] <config-file>``
-    * -e: Start embedded elasticsearch node (only for testing !!)
-    * config-file: path to the json configuration file (see next chapter)
+   * -e: Start embedded elasticsearch node (only for testing !!)
+   * config-file: path to the json configuration file (see next chapter)
 
 <h3>Configuration</h3>
 Put the following configuration in a file and store them somewhere with a extension of .json

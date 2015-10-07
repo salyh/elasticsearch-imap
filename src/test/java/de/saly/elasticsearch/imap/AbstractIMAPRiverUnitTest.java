@@ -308,7 +308,7 @@ public abstract class AbstractIMAPRiverUnitTest {
 
         long count = 0;
         
-        for (Iterator iterator = indices.iterator(); iterator.hasNext();) {
+        for (Iterator<String> iterator = indices.iterator(); iterator.hasNext();) {
             String index = (String) iterator.next();
             count += esSetup.client().count(new CountRequest(index).types(type)).actionGet().getCount();
         }
@@ -373,6 +373,7 @@ public abstract class AbstractIMAPRiverUnitTest {
         logger.info("Putted " + messages + " into mailbox "+EMAIL_USER_ADDRESS3);
     }
 
+    @SuppressWarnings("unchecked")
     protected void registerRiver(final String typename, final String file) throws ElasticsearchException, IOException {
         imapRiver = new IMAPImporter(MAPPER.readValue(loadFile(file), Map.class), esSetup.client());
         imapRiver.start();
@@ -404,6 +405,7 @@ public abstract class AbstractIMAPRiverUnitTest {
 
     }
 
+    @SuppressWarnings("unchecked")
     protected Map<String, Object> settings(final String resource) throws IOException {
         final InputStream in = this.getClass().getResourceAsStream(resource);
         return MAPPER.readValue(in, Map.class);

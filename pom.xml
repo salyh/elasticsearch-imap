@@ -30,7 +30,7 @@
 	</licenses>
 
 	<properties>
-		<elasticsearch.version>1.5.2</elasticsearch.version>
+		<elasticsearch.version>1.7.2</elasticsearch.version>
 		<github.global.server>github</github.global.server>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
@@ -106,14 +106,14 @@
 		<dependency>
 			<groupId>org.elasticsearch</groupId>
 			<artifactId>elasticsearch-mapper-attachments</artifactId>
-			<version>2.5.0</version>
+			<version>2.7.1</version>
 			<scope>test</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.elasticsearch</groupId>
 			<artifactId>elasticsearch-analysis-icu</artifactId>
-			<version>2.5.0</version>
+			<version>2.7.0</version>
 			<scope>test</scope>
 		</dependency>
 
@@ -157,7 +157,7 @@
 		<dependency>
 			<groupId>com.sun.mail</groupId>
 			<artifactId>javax.mail</artifactId>
-			<version>1.5.2</version>
+			<version>1.5.4</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>activation</artifactId>

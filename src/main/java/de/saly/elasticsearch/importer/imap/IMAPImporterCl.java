@@ -28,7 +28,6 @@ package de.saly.elasticsearch.importer.imap;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Map;
 
 import org.codehaus.jackson.map.ObjectMapper;
@@ -38,7 +37,6 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.ImmutableSettings.Builder;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.node.Node;
 
 import de.saly.elasticsearch.importer.imap.impl.IMAPImporter;
@@ -139,6 +137,7 @@ public class IMAPImporterCl {
         imap.start();
     }
     
+    @SuppressWarnings("unchecked")
     public static void start(String configFile, boolean embeddedMode) throws Exception {
         Map<String, Object> settings = MAPPER.readValue(new File(configFile), Map.class);
         start(settings, embeddedMode);
