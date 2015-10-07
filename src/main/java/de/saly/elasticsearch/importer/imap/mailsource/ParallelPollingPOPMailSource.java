@@ -1,6 +1,6 @@
 /***********************************************************************************************************************
  *
- * Elasticsearch IMAP River - open source IMAP river for Elasticsearch
+ * Elasticsearch IMAP/Pop3 E-Mail Importer
  * ==========================================
  *
  * Copyright (C) 2014 by Hendrik Saly (http://saly.de) and others.
