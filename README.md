@@ -1,9 +1,9 @@
-elasticsearch-importer-imap
-==========================
+elasticsearch-importer-imap ES 2.0
+==================================
 
-IMAP (and POP3) import for Elasticsearch
+IMAP (and POP3) import for Elasticsearch 2.0
 
-[![Build Status](https://travis-ci.org/salyh/elasticsearch-river-imap.png?branch=master)](https://travis-ci.org/salyh/elasticsearch-river-imap)
+[![Build Status](https://travis-ci.org/salyh/elasticsearch-river-imap.png?branch=es2.0)](https://travis-ci.org/salyh/elasticsearch-river-imap)
 
 <a href="mailto:hendrikdev22@gmail.com">E-Mail hendrikdev22@gmail.com</a><p>
 <a href="https://twitter.com/hendrikdev22">Twitter @hendrikdev22</a>
@@ -14,7 +14,8 @@ The importer tracks (after the first initial full load) which mails are new or d
 Features:
 
 * Incremental indexing of e-mails from a IMAP or POP3 server
-* Support indexing of attachments (in conjunction with https://github.com/elasticsearch/elasticsearch-mapper-attachments/)
+* ~~Support indexing of attachments (in conjunction with https://github.com/elasticsearch/elasticsearch-mapper-attachments/)~~
+   * Blocked by https://github.com/elastic/elasticsearch-mapper-attachments/issues/169
 * Support for UTF-7 encoded e-mails (through jutf7)
 * SSL, STARTTLS and SASL are supported (through JavaMail API)
 * IMAP only: Folders which should be indexed can be specified with a regex pattern
@@ -27,13 +28,13 @@ The importer acts as a disconnected client. This means that the importer is poll
 
 Branches:
 
-* master for Elasticsearch 1.2 or higher (not working with ES 2.0 yet)
+* es2.0 for Elasticsearch ES 2.0
 
 <h3>Installation</h3> 
 Prerequisites:
 
 * Java 7 or 8
-* Elasticsearch 1.2 or higher (not working with ES 2.0 yet)
+* Elasticsearch 2.0
 * At least one IMAP4 or POP3 server to connect to
 
 Download .zip or .tar.gz from https://github.com/salyh/elasticsearch-river-imap/releases/latest (only Version 0.8.6 or higher) and unpack them somewhere.

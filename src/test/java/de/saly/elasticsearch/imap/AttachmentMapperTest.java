@@ -23,6 +23,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import de.saly.elasticsearch.importer.imap.support.IMAPUtils;
@@ -37,6 +38,7 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
         private static final String WORD_CONTENT_TO_SEARCH = "This paragraph is in the default text style";
         
 	@Test
+	@Ignore
 	public void testAttachments() throws Exception{
 
 	        Map<String, Object> settings = settings("/river-imap-attachments.json");
@@ -107,6 +109,7 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 	}
 	
 	@Test
+	@Ignore
 	public void testAttachments2() throws Exception{
 
 	        Map<String, Object> settings = settings("/river-imap-attachments-2.json");
@@ -193,6 +196,7 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 	}
 
 	@Test
+	@Ignore
 	public void testAttachments3() throws Exception{
 
 	        Map<String, Object> settings = settings("/river-imap-attachments-3.json");
