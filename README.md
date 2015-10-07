@@ -35,12 +35,13 @@ Prerequisites:
 * Elasticsearch 1.2 or higher (not working with ES 2.0 yet)
 * At least one IMAP4 or POP3 server to connect to
 
-Download .zip https://github.com/salyh/elasticsearch-river-imap/releases/latest (only Version 0.8.6 or higher) and unzip them somwhere.
+Download .zip or .tar.gz from https://github.com/salyh/elasticsearch-river-imap/releases/latest (only Version 0.8.6 or higher) and unpack them somewhere.
 
 Then run
 
-* ``./importer.sh <config-file>``
-* ``importer.bat <config-file>``
+* ``bin/importer.sh [-e] <config-file>``
+    * -e: Start embedded elasticsearch node (only for testing !!)
+    * config-file: path to the json configuration file (see next chapter)
 
 <h3>Configuration</h3>
 Put the following configuration in a file and store them somewhere with a extension of .json
@@ -89,7 +90,7 @@ Put the following configuration in a file and store them somewhere with a extens
    "cluster.name": "elasticsearch",
    "elasticsearch.hosts": "localhost:9300,127.0.0.1:9300"
    
-}'</pre>
+}</pre>
 
 * ``mail.*`` - see JAVAMail documentation https://javamail.java.net/nonav/docs/api/  (default: none)
 * ``user`` - user name for server login (default: ``null``) - deprecated, use ``users``

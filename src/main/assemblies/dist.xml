@@ -3,11 +3,12 @@
     <id>uberjar</id>
     <formats>
         <format>zip</format>
+        <format>tar.gz</format>
     </formats>
-    <includeBaseDirectory>false</includeBaseDirectory>
+    <includeBaseDirectory>true</includeBaseDirectory>
     <dependencySets>
         <dependencySet>
-            <outputDirectory>/</outputDirectory>
+            <outputDirectory>/lib</outputDirectory>
             <useProjectArtifact>true</useProjectArtifact>
             <unpack>false</unpack>
             <scope>runtime</scope>
@@ -23,9 +24,26 @@
                 <include>com.beetstra.jutf7</include>
                 <include>com.spatial4j:spatial4j</include>
                 <include>log4j</include>
-                <include>org.slf4j:slf4j-log4j12</include>                
+                <include>org.slf4j:slf4j-log4j12</include>
                 <include>org.slf4j:slf4j-api</include>
             </includes>
         </dependencySet>
     </dependencySets>
+    <fileSets>
+        <fileSet>
+            <outputDirectory>/</outputDirectory>
+            <fileMode>0755</fileMode>
+            <includes>
+                <include>bin/**</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>LICENSE</include>
+                <include>README*</include>
+                <include>*example*.json</include>
+            </includes>
+        </fileSet>
+    </fileSets>
 </assembly>
