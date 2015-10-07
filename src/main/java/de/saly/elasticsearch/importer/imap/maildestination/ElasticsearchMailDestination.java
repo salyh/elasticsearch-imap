@@ -101,9 +101,11 @@ public class ElasticsearchMailDestination implements MailDestination {
         createIndexIfNotExists();
         
         client.admin().indices().refresh(new RefreshRequest()).actionGet();
-
-        client.prepareDeleteByQuery(index).setTypes(type).setQuery(QueryBuilders.termQuery("folderFullName", folderName)).execute()
-                .actionGet();
+        
+        //client.prepareDeleteByQuery(index).setTypes(type).setQuery(QueryBuilders.termQuery("folderFullName", folderName)).execute()
+        //        .actionGet();
+        
+       //FIXME TODO 2.0 prepareDeleteByQuery
 
     }
 
@@ -294,14 +296,14 @@ public class ElasticsearchMailDestination implements MailDestination {
         final BoolQueryBuilder query = new BoolQueryBuilder();
 
         if (isPop) {
-            query.must(QueryBuilders.inQuery("popId", msgs));
+            //query.must(QueryBuilders.inQuery("popId", msgs)); //FIXME TODO 2.0 in query
         } else {
-            query.must(QueryBuilders.inQuery("uid", msgs));
+            //query.must(QueryBuilders.inQuery("uid", msgs)); //FIXME TODO 2.0 in query
         }
 
         query.must(QueryBuilders.termQuery("folderFullName", folderName));
 
-        client.prepareDeleteByQuery(index).setTypes(type).setQuery(query).execute().actionGet();
+        //client.prepareDeleteByQuery(index).setTypes(type).setQuery(query).execute().actionGet(); //FIXME TODO 2.0 prepareDeleteByQuery
 
     }
 

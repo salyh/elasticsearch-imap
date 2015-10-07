@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 
-import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -80,7 +79,7 @@ public class ElasticsearchBulkMailDestination extends ElasticsearchMailDestinati
 
     private int maxConcurrentBulkRequests = 30;
 
-    private final ByteSizeValue maxVolumePerBulkRequest = ByteSizeValue.parseBytesSizeValue("10mb");
+    private final ByteSizeValue maxVolumePerBulkRequest = ByteSizeValue.parseBytesSizeValue("10mb", "_dummy");
 
     @Override
     public ElasticsearchMailDestination client(final Client client) {
@@ -165,7 +164,7 @@ public class ElasticsearchBulkMailDestination extends ElasticsearchMailDestinati
                 bulk.add(createIndexRequest(imsg));
                 queue.incrementAndGet();
             }
-        } catch (final ElasticsearchIllegalStateException e) {
+        } catch (final Exception e) { // TODO 2.0 was ElasticsearchIllegalStateException
 
             if (isClosed()) {
                 logger.debug("Bulkprocessing error due to {}", e.toString());

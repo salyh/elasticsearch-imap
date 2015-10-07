@@ -25,8 +25,6 @@
  **********************************************************************************************************************/
 package de.saly.elasticsearch.imap;
 
-import static com.github.tlrx.elasticsearch.test.EsSetup.deleteAll;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -58,16 +56,15 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.ImmutableSettings.Builder;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.node.Node;
+import org.elasticsearch.node.NodeBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestName;
-
-import com.github.tlrx.elasticsearch.test.EsSetup;
 
 import de.saly.elasticsearch.importer.imap.impl.IMAPImporter;
 import de.saly.elasticsearch.importer.imap.support.IMAPUtils;
@@ -96,9 +93,9 @@ public abstract class AbstractIMAPRiverUnitTest {
 
     @Rule
     public TestName name = new TestName();
-    protected EsSetup esSetup;
-    protected EsSetup esSetup2;
-    protected EsSetup esSetup3;
+    protected Node esSetup;
+    protected Node esSetup2;
+    protected Node esSetup3;
     private IMAPImporter imapRiver;
     
     protected final ESLogger logger = ESLoggerFactory.getLogger(this.getClass().getName());
@@ -113,13 +110,12 @@ public abstract class AbstractIMAPRiverUnitTest {
     }
     
     
-    protected Builder getSettingsBuilder(boolean dataNode, boolean masterNode) {
-        Builder builder = ImmutableSettings
+    protected Settings.Builder getSettingsBuilder(boolean dataNode, boolean masterNode) {
+        Settings.Builder builder = Settings
         .settingsBuilder()
-        // .put(NODE_NAME, elasticsearchNode.name())
-        // .put("node.data", elasticsearchNode.data())
+        .put("path.home", ".")
         .put("cluster.name", "imapriver_testcluster")
-        .put("index.store.type", "memory").put("index.store.fs.memory.enabled", "true").put("gateway.type", "none")
+        .put("index.store.fs.memory.enabled", "true")
         .put("path.data", "target/data").put("path.work", "target/work").put("path.logs", "target/logs")
         .put("path.conf", "target/config").put("path.plugins", "target/plugins").put("index.number_of_shards", "5")
         .put("index.number_of_replicas", "0")
@@ -128,7 +124,6 @@ public abstract class AbstractIMAPRiverUnitTest {
         .put("node.local", true)
         .put("node.master", masterNode)
         .put(getProperties());
-         builder.put("node.river", "_none_");
          return builder;
     }
 
@@ -141,28 +136,9 @@ public abstract class AbstractIMAPRiverUnitTest {
 
         // Instantiates a local node & client
 
-        esSetup = new EsSetup(getSettingsBuilder(false, true).build());
-        esSetup2 = new EsSetup(getSettingsBuilder(true, false).build());
-        esSetup3 = new EsSetup(getSettingsBuilder(false, true).build());
-        // Clean all, and creates some indices
-
-        esSetup.execute(
-
-        deleteAll()
-
-        );
-        
-        esSetup2.execute(
-
-                deleteAll()
-
-                );
-        
-        esSetup3.execute(
-
-                deleteAll()
-
-                );
+        esSetup =  NodeBuilder.nodeBuilder().settings(getSettingsBuilder(false, true)).build().start();
+        esSetup2 = NodeBuilder.nodeBuilder().settings(getSettingsBuilder(true, false)).build().start();
+        esSetup3 = NodeBuilder.nodeBuilder().settings(getSettingsBuilder(false, true)).build().start();
         
         waitForGreenClusterState(esSetup.client());
 
@@ -178,15 +154,15 @@ public abstract class AbstractIMAPRiverUnitTest {
         }
         
         if (esSetup != null) {
-            esSetup.terminate();
+            esSetup.close();
         }
         
         if (esSetup2 != null) {
-            esSetup2.terminate();
+            esSetup2.close();
         }
         
         if (esSetup3 != null) {
-            esSetup3.terminate();
+            esSetup3.close();
         }
 
     }
@@ -302,7 +278,7 @@ public abstract class AbstractIMAPRiverUnitTest {
     }
     
     protected long getCount(final List<String> indices, final String type) {
-        logger.debug("getCount()");
+        logger.debug("getCount() for {}", indices);
 
         esSetup.client().admin().indices().refresh(new RefreshRequest()).actionGet();
 
@@ -310,7 +286,9 @@ public abstract class AbstractIMAPRiverUnitTest {
         
         for (Iterator<String> iterator = indices.iterator(); iterator.hasNext();) {
             String index = (String) iterator.next();
-            count += esSetup.client().count(new CountRequest(index).types(type)).actionGet().getCount();
+             long lcount = esSetup.client().count(new CountRequest(index).types(type)).actionGet().getCount();
+             logger.debug("Count for index {} is {}", index, lcount);
+             count += lcount;
         }
                 
         return count;

@@ -28,13 +28,12 @@ package de.saly.elasticsearch.importer.imap;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 import java.io.File;
+import java.net.InetAddress;
 import java.util.Map;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.ImmutableSettings.Builder;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.node.Node;
@@ -109,7 +108,7 @@ public class IMAPImporterCl {
     
     public static void start(Map<String, Object> settings, boolean embeddedMode) throws Exception {
 
-        Builder builder = ImmutableSettings.settingsBuilder();
+        Settings.Builder builder = Settings.settingsBuilder();
 
         for(String key: settings.keySet()) {
             builder.put(key, String.valueOf(settings.get(key)));
@@ -122,7 +121,7 @@ public class IMAPImporterCl {
             client = node.client();
         }else
         {
-            client = new TransportClient(eSettings);
+            client = new TransportClient.Builder().settings(eSettings).build();
             String[] hosts = eSettings.get("elasticsearch.hosts").split(",");
             
             for (int i = 0; i < hosts.length; i++) {
@@ -130,7 +129,7 @@ public class IMAPImporterCl {
                 String hostOnly = host.split(":")[0];
                 String portOnly = host.split(":")[1];
                 System.out.println("Adding "+hostOnly+":"+portOnly);
-                ((TransportClient)client).addTransportAddress(new InetSocketTransportAddress(hostOnly, Integer.parseInt(portOnly)));
+                ((TransportClient)client).addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(hostOnly), Integer.parseInt(portOnly)));
             }
         }
         imap = new IMAPImporter(settings, client);
