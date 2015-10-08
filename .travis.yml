@@ -1,4 +1,4 @@
-sudo: false
+#sudo: false //this fails with openjdk7 and prefer ip4 stack
 language: java
 
 jdk:
