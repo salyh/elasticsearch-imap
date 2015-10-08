@@ -45,15 +45,12 @@ import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
-import org.elasticsearch.river.AbstractRiverComponent;
-import org.elasticsearch.river.River;
-import org.elasticsearch.river.RiverName;
-import org.elasticsearch.river.RiverSettings;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
@@ -72,7 +69,7 @@ import de.saly.elasticsearch.riverstate.ElasticsearchRiverStateManager;
 import de.saly.elasticsearch.riverstate.RiverStateManager;
 import de.saly.elasticsearch.support.MailFlowJob;
 
-public class IMAPRiver extends AbstractRiverComponent implements River {
+public class IMAPRiver {
 
     public final static String NAME = "river-imap";
 
@@ -109,14 +106,27 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
     private final List<String> users = new ArrayList<String>();
 
     private final List<String> headersToFields;
+    
+    public static void main(String[] args) {
+     
+        
+        Settings clientSettings = null; //... load settings from a file
+        
+        Client client = TransportClient.builder().settings(clientSettings).build(); //add settings to connect to elasticsearch
+        
+        Map<String, Object> imapSettings = null;//... load settings from a file oder from elasticsearch or ...
+        
+        IMAPRiver importer = new IMAPRiver(imapSettings, client);
+        importer.start();
+        
+        //This is best called from a shutdown hook
+        //importer.close();
+        
+    }
 
-    @Inject
-    public IMAPRiver(final RiverName riverName, final RiverSettings riverSettings, final Client client) {
-        super(riverName, riverSettings);
+    public IMAPRiver(Map<String, Object> imapSettings, final Client client) {
         
         this.client = client;
-
-        final Map<String, Object> imapSettings = settings.settings();
 
         getUserLogins(imapSettings);
 
@@ -220,10 +230,9 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
             mailSources.add(mailSource);
             indices.add(_indexName);
         }
-        logger.info("IMAPRiver created, river name: {}", riverName.getName());
+        logger.info("IMAPRiver created");
     }
 
-    @Override
     public void close() {
 
         if (closed) {
@@ -285,7 +294,6 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
         }
     }
 
-    @Override
     public void start() {
         logger.info("Start IMAPRiver ...");
 
@@ -344,7 +352,7 @@ public class IMAPRiver extends AbstractRiverComponent implements River {
             logger.info("IMAPRiver started");
 
         } catch (final Exception e) {
-            logger.error("Unable to start IMAPRiver '"+riverName.getName()+"' due to " + e, e);
+            logger.error("Unable to start IMAPRiver due to " + e, e);
         }
 
     }
