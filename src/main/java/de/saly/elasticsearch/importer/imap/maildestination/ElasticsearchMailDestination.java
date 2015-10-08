@@ -441,7 +441,9 @@ public class ElasticsearchMailDestination implements MailDestination {
         final String id = (!StringUtils.isEmpty(message.getPopId()) ? message.getPopId() : message.getUid()) + "::"
                 + message.getFolderUri();
         
-        System.out.println("Message: "+message.build());
+        //if(logger.isTraceEnabled()) {
+        //   logger.trace("Message: "+message.build());
+        //}
         
         final IndexRequest request = Requests.indexRequest(index).type(type).id(id).source(message.build());
 
