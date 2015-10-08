@@ -49,7 +49,6 @@ import javax.mail.internet.MimeMessage;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.elasticsearch.indices.IndexMissingException;
 
 import de.saly.elasticsearch.maildestination.MailDestination;
 import de.saly.elasticsearch.riverstate.RiverState;
@@ -480,11 +479,9 @@ public class ParallelPollingIMAPMailSource implements MailSource {
                     }
                 }
             }
-        } catch (final IndexMissingException ime) {
+        } catch (final Exception ime) {
             logger.debug(ime.toString());
 
-        } catch (final Exception e) {
-            logger.error("Error checking for stale folders", e);
         }
 
         final boolean isRoot = StringUtils.isEmpty(folderName);

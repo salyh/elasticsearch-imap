@@ -48,7 +48,6 @@ import javax.mail.Store;
 
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.elasticsearch.indices.IndexMissingException;
 
 import com.sun.mail.pop3.POP3Folder;
 
@@ -277,7 +276,7 @@ public class ParallelPollingPOPMailSource implements MailSource {
                                                                                                                    // during
                                                                                                                    // this
                                                                                                                    // method
-        } catch (final IndexMissingException ime) {
+        } catch (final Exception ime) {
             logger.debug(ime.toString());
 
         }
