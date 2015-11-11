@@ -167,9 +167,13 @@ public class LdapLoginSource implements ILoginSource, Runnable {
 
 	    result = (SearchResult) ldapContents.next();
 
-	    // comes in the format "uid=name"
-	    name = result.getName();
-	    name = name.split("=")[1];
+        // comes in format "uid=name"
+        // in a subtree search, it's "uid=name,ou=..."
+        name = result.getName();
+        if(name.indexOf(',') > 0) {
+            name = name.split(",")[0];
+        }
+        name = name.split("=")[1];
 
 	    // append master user if configured
 	    if (fMasterUser != null) {
