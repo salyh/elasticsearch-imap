@@ -18,6 +18,5 @@ target/
 .classpath
 .project
 .settings/
-*.sh
 elasticsearch-*/
 /pom.xml.versionsBackup
