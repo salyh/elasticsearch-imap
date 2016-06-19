@@ -122,7 +122,11 @@ public class IMAPImporterCl {
         }
         
         if(embeddedMode) {
-            FileUtils.forceDelete(new File("./data"));
+            try {
+                FileUtils.forceDelete(new File("./data"));
+            } catch (Exception e) {
+                //ignore
+            }
             builder.put("path.home",".");
             builder.put("node.local", true);
             builder.put("http.cors.enabled", true);
