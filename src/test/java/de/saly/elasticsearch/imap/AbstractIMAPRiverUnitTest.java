@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -50,7 +51,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.count.CountRequest;
 import org.elasticsearch.action.count.CountResponse;
@@ -60,13 +61,17 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.mapper.attachments.MapperAttachmentsPlugin;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
+import org.elasticsearch.node.PluginAwareNode;
 import org.elasticsearch.search.SearchHit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestName;
+
+import com.google.common.collect.Lists;
 
 import de.saly.elasticsearch.importer.imap.impl.IMAPImporter;
 import de.saly.elasticsearch.importer.imap.support.IMAPUtils;
@@ -144,9 +149,9 @@ public abstract class AbstractIMAPRiverUnitTest {
 
         // Instantiates a local node & client
 
-        esSetup =  NodeBuilder.nodeBuilder().settings(getSettingsBuilder(false, true)).build().start();
-        esSetup2 = NodeBuilder.nodeBuilder().settings(getSettingsBuilder(true, false)).build().start();
-        esSetup3 = NodeBuilder.nodeBuilder().settings(getSettingsBuilder(false, true)).build().start();
+        esSetup =  new PluginAwareNode(getSettingsBuilder(false, true).build(), (Collection) Lists.newArrayList(MapperAttachmentsPlugin.class)).start();
+        esSetup2 = new PluginAwareNode(getSettingsBuilder(true, false).build(), (Collection) Lists.newArrayList(MapperAttachmentsPlugin.class)).start();
+        esSetup3 = new PluginAwareNode(getSettingsBuilder(false, true).build(), (Collection) Lists.newArrayList(MapperAttachmentsPlugin.class)).start();
         
         waitForGreenClusterState(esSetup.client());
 

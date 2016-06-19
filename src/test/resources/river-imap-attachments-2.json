@@ -20,7 +20,6 @@
                "properties":{
                   "content":{
                      "type":"attachment",
-                     "path":"full",
                      "fields":{
                         "content":{
                            "type":"string",

@@ -29,14 +29,21 @@ import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 import java.io.File;
 import java.net.InetAddress;
+import java.util.Collection;
 import java.util.Map;
 
+import org.apache.commons.io.FileUtils;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.mapper.attachments.MapperAttachmentsPlugin;
 import org.elasticsearch.node.Node;
+import org.elasticsearch.node.PluginAwareNode;
+import org.elasticsearch.plugins.Plugin;
+
+import com.google.common.collect.Lists;
 
 import de.saly.elasticsearch.importer.imap.impl.IMAPImporter;
 
@@ -114,13 +121,19 @@ public class IMAPImporterCl {
             builder.put(key, String.valueOf(settings.get(key)));
         }
         
-        Settings eSettings = builder.build();
-        
         if(embeddedMode) {
-            node = nodeBuilder().local(true).clusterName("imap-embedded-"+System.currentTimeMillis()).node();
+            FileUtils.forceDelete(new File("./data"));
+            builder.put("path.home",".");
+            builder.put("node.local", true);
+            builder.put("http.cors.enabled", true);
+            builder.put("http.cors.allow-origin", "*");
+            builder.put("cluster.name", "imap-embedded-"+System.currentTimeMillis());
+            node = new PluginAwareNode(builder.build(), (Collection) Lists.newArrayList(MapperAttachmentsPlugin.class));
+            node.start();
             client = node.client();
         }else
         {
+            Settings eSettings = builder.build();
             client = new TransportClient.Builder().settings(eSettings).build();
             String[] hosts = eSettings.get("elasticsearch.hosts").split(",");
             
