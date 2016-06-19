@@ -13,32 +13,6 @@
    "with_flag_sync":false,
    "mail_index_name":"imapriverdata",
    "mail_type_name":"mail",
-   "index_settings":{
-      "index":{
-         "analysis":{
-            "analyzer":{
-               "email_analyzer":{
-                  "type":"custom",
-                  "filter":[
-                     "lowercase"
-                  ],
-                  "tokenizer":"uax_url_email"
-               },
-               "fulltext_analyzer_icu":{
-                  "type":"custom",
-                  "char_filter":[
-                     "html_strip"
-                  ],
-                  "filter":[
-                     "lowercase",
-                     "type_as_payload"
-                  ],
-                  "tokenizer":"icu_tokenizer"
-               }
-            }
-         }
-      }
-   },
    "type_mapping":{
       "mail":{
          "properties":{
@@ -49,7 +23,6 @@
                "properties":{
                   "content":{
                      "type":"attachment",
-                     "path":"full",
                      "fields":{
                         "content":{
                            "type":"string",
@@ -66,7 +39,7 @@
                            "store":"yes"
                         },
                         "author":{
-                           "analyzer":"fulltext_analyzer_icu"
+                           "store":"yes"
                         },
                         "keywords":{
                            "store":"yes"
@@ -157,8 +130,7 @@
                "type":"nested",
                "properties":{
                   "email":{
-                     "type":"string",
-                     "index_analyzer":"email_analyzer"
+                     "type":"string"
                   },
                   "personal":{
                      "type":"string"

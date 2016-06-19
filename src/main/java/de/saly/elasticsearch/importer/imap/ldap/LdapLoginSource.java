@@ -33,10 +33,11 @@ import javax.naming.NamingEnumeration;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.SearchResult;
 
-import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
+
+import com.google.common.collect.Lists;
 
 /**
  * Login data provider connecting to an ldap directory, reading all available

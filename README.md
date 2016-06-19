@@ -1,11 +1,7 @@
-elasticsearch-importer-imap
-==========================
+elasticsearch-importer-imap  Elasticsearch 2.x
+==============================================
 
-This version is for Elasticsearch 1.x. For ES 2.0 look here https://github.com/salyh/elasticsearch-river-imap/tree/es2.0
-
-IMAP (and POP3) import for Elasticsearch
-
-[![Build Status](https://travis-ci.org/salyh/elasticsearch-river-imap.png?branch=master)](https://travis-ci.org/salyh/elasticsearch-river-imap)
+Import e-mails from IMAP (and POP3) into Elasticsearch 2.x
 
 <a href="mailto:hendrikdev22@gmail.com">E-Mail hendrikdev22@gmail.com</a><p>
 <a href="https://twitter.com/hendrikdev22">Twitter @hendrikdev22</a>
@@ -16,7 +12,7 @@ The importer tracks (after the first initial full load) which mails are new or d
 Features:
 
 * Incremental indexing of e-mails from a IMAP or POP3 server
-* Support indexing of attachments (in conjunction with https://github.com/elasticsearch/elasticsearch-mapper-attachments/)
+* Support indexing of attachments
 * Support for UTF-7 encoded e-mails (through jutf7)
 * SSL, STARTTLS and SASL are supported (through JavaMail API)
 * IMAP only: Folders which should be indexed can be specified with a regex pattern
@@ -27,15 +23,11 @@ Features:
 
 The importer acts as a disconnected client. This means that the importer is polling and for every indexing run a new server connection is opened and, after work is done, closed.
 
-Branches:
-
-* master for Elasticsearch 1.2 or higher (not working with ES 2.0 yet)
-
 <h3>Installation</h3> 
 Prerequisites:
 
 * Java 7 or 8
-* Elasticsearch 1.2 or higher (not working with ES 2.0 yet)
+* Elasticsearch 2.x
 * At least one IMAP4 or POP3 server to connect to
 
 Download .zip or .tar.gz from https://github.com/salyh/elasticsearch-river-imap/releases/latest (only Version 0.8.6 or higher) and unpack them somewhere.
@@ -57,8 +49,8 @@ Put the following configuration in a file and store them somewhere with a extens
    "mail.imap.connectionpoolsize":"3",
    "mail.debug":"false",
    "mail.imap.timeout":10000,
-   "user":"user@domain.com",
-   "password":"secret",
+   "users":["user@domain.com"],
+   "passwords":["secret"],
    "schedule":null,
    "interval":"60s",
    "threads":5,

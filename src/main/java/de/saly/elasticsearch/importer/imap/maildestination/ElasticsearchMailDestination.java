@@ -28,11 +28,13 @@ package de.saly.elasticsearch.importer.imap.maildestination;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 
@@ -40,6 +42,8 @@ import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
+import org.elasticsearch.action.bulk.BulkItemResponse;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -56,7 +60,11 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 
+import com.sun.mail.imap.IMAPFolder;
+import com.sun.mail.pop3.POP3Folder;
+
 import de.saly.elasticsearch.importer.imap.impl.IMAPImporter;
+import de.saly.elasticsearch.importer.imap.support.DeleteByQuery;
 import de.saly.elasticsearch.importer.imap.support.IndexableMailMessage;
 
 public class ElasticsearchMailDestination implements MailDestination {
@@ -94,16 +102,15 @@ public class ElasticsearchMailDestination implements MailDestination {
     protected final ESLogger logger = ESLoggerFactory.getLogger(this.getClass().getName());
 
     @Override
-    public void clearDataForFolder(final String folderName) throws IOException, MessagingException {
+    public void clearDataForFolder(final Folder folder) throws IOException, MessagingException {
 
-        logger.info("Delete locally all messages for folder " + folderName);
+        logger.info("Delete locally all messages for folder {} in {}/{}",folder.getURLName().toString(), index, type);
 
         createIndexIfNotExists();
         
         client.admin().indices().refresh(new RefreshRequest()).actionGet();
-
-        client.prepareDeleteByQuery(index).setTypes(type).setQuery(QueryBuilders.termQuery("folderFullName", folderName)).execute()
-                .actionGet();
+        
+        DeleteByQuery.deleteByQuery(client, index, new String[]{type}, QueryBuilders.termQuery("folderUri", folder.getURLName().toString()));
 
     }
 
@@ -126,7 +133,7 @@ public class ElasticsearchMailDestination implements MailDestination {
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
-    public Set getCurrentlyStoredMessageUids(final String folderName, final boolean isPop) throws IOException, MessagingException {
+    public Set getCurrentlyStoredMessageUids(final Folder folder) throws IOException, MessagingException {
 
         createIndexIfNotExists();
         
@@ -134,7 +141,7 @@ public class ElasticsearchMailDestination implements MailDestination {
 
         final Set uids = new HashSet();
 
-        final TermQueryBuilder b = QueryBuilders.termQuery("folderFullName", folderName);
+        final TermQueryBuilder b = QueryBuilders.termQuery("folderUri", folder.getURLName().toString());
 
         logger.debug("Term query: " + b.buildAsBytes().toUtf8());
 
@@ -147,7 +154,7 @@ public class ElasticsearchMailDestination implements MailDestination {
             for (final SearchHit hit : scrollResp.getHits()) {
                 hitsRead = true;
 
-                if (!isPop) {
+                if (folder instanceof IMAPFolder) {
                     uids.add(Long.parseLong(hit.getId().split("::")[0]));
                 } else {
                     uids.add(hit.getId().split("::")[0]);
@@ -160,7 +167,7 @@ public class ElasticsearchMailDestination implements MailDestination {
             }
         }
 
-        logger.debug("Currently locally stored messages for folder {}: {}", folderName, uids.size());
+        logger.debug("Currently locally stored messages for folder {}: {}", folder.getURLName(), uids.size());
 
         return uids;
 
@@ -279,7 +286,7 @@ public class ElasticsearchMailDestination implements MailDestination {
 
     @SuppressWarnings("rawtypes")
     @Override
-    public void onMessageDeletes(final Set msgs, final String folderName, final boolean isPop) throws IOException, MessagingException {
+    public void onMessageDeletes(final Set msgs, final Folder folder) throws IOException, MessagingException {
 
         if (msgs.size() == 0) {
             return;
@@ -289,19 +296,19 @@ public class ElasticsearchMailDestination implements MailDestination {
         
         client.admin().indices().refresh(new RefreshRequest()).actionGet();
 
-        logger.info("Will delete " + msgs.size() + " messages locally for folder " + folderName);
+        logger.info("Will delete " + msgs.size() + " messages locally for folder " + folder.getURLName().toString());
 
         final BoolQueryBuilder query = new BoolQueryBuilder();
 
-        if (isPop) {
-            query.must(QueryBuilders.inQuery("popId", msgs));
+        if (folder instanceof POP3Folder) {
+            query.must(QueryBuilders.termsQuery("popId", msgs));
         } else {
-            query.must(QueryBuilders.inQuery("uid", msgs));
+            query.must(QueryBuilders.termsQuery("uid", msgs));
         }
 
-        query.must(QueryBuilders.termQuery("folderFullName", folderName));
+        query.must(QueryBuilders.termQuery("folderUri", folder.getURLName().toString()));
 
-        client.prepareDeleteByQuery(index).setTypes(type).setQuery(query).execute().actionGet();
+        DeleteByQuery.deleteByQuery(client, index, new String[]{type}, query);
 
     }
 
@@ -395,7 +402,7 @@ public class ElasticsearchMailDestination implements MailDestination {
             
             
             if (mapping != null) {
-                logger.debug("mapping for type '{}' is provided, will apply {}", type, mapping);
+                logger.warn("mapping for type '{}' is provided, will apply {}", type, mapping);
                 createIndexRequestBuilder.addMapping(type, mapping);
             } else {
                 logger.debug("no mapping given for type '{}', will apply default mapping",type);
@@ -415,6 +422,8 @@ public class ElasticsearchMailDestination implements MailDestination {
         } else {
             logger.debug("Index {} already exists", index);
         }
+        
+        initialized = true;
     }
     
     
@@ -422,12 +431,55 @@ public class ElasticsearchMailDestination implements MailDestination {
         
         final XContentBuilder mappingBuilder = jsonBuilder().startObject().startObject(type).startObject("properties")
                 .startObject("folderFullName").field("index", "not_analyzed").field("type", "string").endObject()
-                .startObject("receivedDate").field("type", "date").field("format", "basic_date_time").endObject().startObject("sentDate")
-                .field("type", "date").field("format", "basic_date_time").endObject().startObject("flaghashcode").field("type", "integer")
-                .endObject()
+                .startObject("folderUri").field("index", "not_analyzed").field("type", "string").endObject()
+                .startObject("contentType").field("index", "not_analyzed").field("type", "string").endObject()
+                .startObject("receivedDate").field("type", "date").field("format", "basic_date_time").endObject()
+                .startObject("sentDate").field("type", "date").field("format", "basic_date_time").endObject()
+                .startObject("flaghashcode").field("type", "integer").endObject();
+        
+       /* "attachments":{
+            "properties":{
+               "content":{
+                  "type":"attachment",
+                  "fields":{
+                     "content":{
+                        "store": true,
+                        "index": "analyzed"
+                     },
+                     "title" : {"store" : "yes"},
+                     "content_type" : {"store" : "yes"}
+                  }
+               }
+            }
+         }*/
+        
+                if(withAttachments) {
+                    logger.info("Configure Attachments Mapper Plugin");
+                    mappingBuilder
+                       .startObject("attachments")
+                          .startObject("properties")
+                             .startObject("content")
+                               .field("type", "attachment")
+                               .startObject("fields")
+                                  .startObject("content")
+                                   .field("store", true)
+                                   .field("index", "analyzed")
+                                   .endObject()
+                                .startObject("title")
+                                .field("store",true)
+                                .endObject()
+                                .startObject("content_type")
+                                .field("store",true)
+                                .endObject()
+                             .endObject()
+                          .endObject()
+                       .endObject()
+                    .endObject();
+                }
+                
                 // .startObject("attachments").startObject("properties").startObject("content").field("type",
                 // "attachment").endObject().endObject().endObject()
-                .endObject().endObject().endObject();
+                mappingBuilder.endObject().endObject().endObject();
 
         return mappingBuilder;
         
@@ -437,7 +489,11 @@ public class ElasticsearchMailDestination implements MailDestination {
 
         final String id = (!StringUtils.isEmpty(message.getPopId()) ? message.getPopId() : message.getUid()) + "::"
                 + message.getFolderUri();
-
+        
+        //if(logger.isTraceEnabled()) {
+        //   logger.trace("Message: "+message.build());
+        //}
+        
         final IndexRequest request = Requests.indexRequest(index).type(type).id(id).source(message.build());
 
         return request;
@@ -459,5 +515,5 @@ public class ElasticsearchMailDestination implements MailDestination {
     protected void setError(final boolean error) {
         this.error = error;
     }
-
+    
 }

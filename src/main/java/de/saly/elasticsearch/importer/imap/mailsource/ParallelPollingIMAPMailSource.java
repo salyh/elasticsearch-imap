@@ -46,10 +46,10 @@ import javax.mail.Store;
 import javax.mail.UIDFolder;
 import javax.mail.internet.MimeMessage;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.elasticsearch.indices.IndexMissingException;
 
 import de.saly.elasticsearch.importer.imap.maildestination.MailDestination;
 import de.saly.elasticsearch.importer.imap.state.State;
@@ -68,7 +68,6 @@ public class ParallelPollingIMAPMailSource implements MailSource {
     private boolean withFlagSync = true;
     private boolean deleteExpungedMessages = true;
     protected final ESLogger logger = ESLoggerFactory.getLogger(this.getClass().getName());
-
     public ParallelPollingIMAPMailSource(final Properties props, final int threadCount, final String user, final String password) {
         super();
         this.props = props;
@@ -293,11 +292,10 @@ public class ParallelPollingIMAPMailSource implements MailSource {
         logger.debug("Server uid validity: {}, Local uid validity: {}", servervalidity, localvalidity);
 
         if (localvalidity == null || localvalidity.longValue() != servervalidity) {
-
             logger.debug("UIDValidity fail, full resync " + localvalidity + "!=" + servervalidity);
 
             if (localvalidity != null) {
-                mailDestination.clearDataForFolder(folder.getFullName());
+                mailDestination.clearDataForFolder(folder);
             }
 
             final ProcessResult result = process(messageCount, 1, folder.getFullName());
@@ -366,55 +364,66 @@ public class ParallelPollingIMAPMailSource implements MailSource {
                     }
                 }
 
-                final long highestUID = riverState.getLastUid(); // this uid is
+                long highestUID = riverState.getLastUid(); // this uid is
                                                                  // already
                                                                  // processed
 
                 logger.debug("highestUID: {}", highestUID);
-
-                final Message[] msgsnew = uidfolder.getMessagesByUID(highestUID, UIDFolder.LASTUID);
-
-                // msgnew.size is always >= 1
-                if (highestUID > 0 && uidfolder.getUID(msgsnew[0]) <= highestUID) {
-                    // msgsnew = (Message[]) ArrayUtils.remove(msgsnew, 0);
+                
+                if(highestUID < 1) {
+                    logger.error("highestUID: {} not valid, set it to 1", highestUID);
+                    highestUID = 1;
                 }
+                
+                Message[] msgsnew = uidfolder.getMessagesByUID(highestUID, UIDFolder.LASTUID);
 
                 if (msgsnew.length > 0) {
-
-                    logger.info("{} new messages in folder {}", msgsnew.length, folder.getFullName());
-
-                    final int start = msgsnew[0].getMessageNumber();
-
-                    final ProcessResult result = process(messageCount, start, folder.getFullName());
-
-                    riverState.setLastCount(result.getProcessedCount());
-
-                    if (result.getProcessedCount() > 0) {
-                        riverState.setLastIndexed(new Date());
+                    
+                    System.out.println("lastuid: "+uidfolder.getUID(msgsnew[msgsnew.length-1]));
+                    
+                    // msgnew.size is always >= 1
+                    if (highestUID > 1 && uidfolder.getUID(msgsnew[msgsnew.length-1]) <= highestUID) {
+                         msgsnew = (Message[]) ArrayUtils.remove(msgsnew, msgsnew.length-1);
                     }
-
-                    if (result.getProcessedCount() > 0) {
-                        riverState.setLastTook(result.getTook());
+                                        
+                    if(msgsnew.length > 0) {
+                    
+                        logger.info("{} new messages in folder {}", msgsnew.length, folder.getFullName());
+    
+                        final int start = msgsnew[0].getMessageNumber();
+    
+                        final ProcessResult result = process(messageCount, start, folder.getFullName());
+    
+                        riverState.setLastCount(result.getProcessedCount());
+    
+                        if (result.getProcessedCount() > 0) {
+                            riverState.setLastIndexed(new Date());
+                        }
+    
+                        if (result.getProcessedCount() > 0) {
+                            riverState.setLastTook(result.getTook());
+                        }
+    
+                        riverState.setLastSchedule(new Date());
+    
+                        if (result.getProcessedCount() > 0 && result.getHighestUid() > 0) {
+                            riverState.setLastUid(result.getHighestUid());
+                        }
+    
+                        riverState.setUidValidity(servervalidity);
+                        stateManager.setRiverState(riverState);
+    
+                        logger.info("Not initiailly processed {} mails for folder {}", result.getProcessedCount(), folder.getFullName());
+                        logger.debug("Processed result {}", result.toString());
+                    } else {
+                        logger.debug("no new messages");
                     }
-
-                    riverState.setLastSchedule(new Date());
-
-                    if (result.getProcessedCount() > 0 && result.getHighestUid() > 0) {
-                        riverState.setLastUid(result.getHighestUid());
-                    }
-
-                    riverState.setUidValidity(servervalidity);
-                    stateManager.setRiverState(riverState);
-
-                    logger.info("Not initiailly processed {} mails for folder {}", result.getProcessedCount(), folder.getFullName());
-                    logger.debug("Processed result {}", result.toString());
                 } else {
                     logger.debug("no new messages");
                 }
 
             }
             // check for expunged/deleted messages
-
             final Set<Long> serverMailSet = new HashSet<Long>();
 
             final long oldmailUid = riverState.getLastUid();
@@ -436,19 +445,19 @@ public class ParallelPollingIMAPMailSource implements MailSource {
                     IMAPUtils.open(folder);
                 }
             }
-
+            
             if(deleteExpungedMessages) {
             
-                final Set localMailSet = new HashSet(mailDestination.getCurrentlyStoredMessageUids(folder.getFullName(), false));
+                final Set localMailSet = new HashSet(mailDestination.getCurrentlyStoredMessageUids(folder));
     
                 logger.debug("Check now " + localMailSet.size() + " server mails for expunge");
     
                 localMailSet.removeAll(serverMailSet);
-                // localMailSet has now the ones that are not on server
+                // localMailSet has now the ones that are not on server             
     
                 logger.info(localMailSet.size() + " messages were locally deleted, because they are expunged on server.");
     
-                mailDestination.onMessageDeletes(localMailSet, folder.getFullName(), false);
+                mailDestination.onMessageDeletes(localMailSet, folder);
             
             }
 
@@ -457,34 +466,37 @@ public class ParallelPollingIMAPMailSource implements MailSource {
     }
 
     protected void fetch(final Pattern pattern, final String folderName) throws MessagingException, IOException {
-
-        logger.debug("fetch() - pattern: {}, folderName: {}", pattern, folderName);
+        logger.debug("fetch() - pattern: {}, folderName: {}, user: {}", pattern, folderName, user);
 
         final Store store = Session.getInstance(props).getStore();
         store.connect(user, password);
 
-        try {
-            for (final String fol : mailDestination.getFolderNames()) {
-                if (store.getFolder(fol).exists()) {
-                    logger.debug("{} exists", fol);
-                } else {
-                    logger.info("Folder {} does not exist on the server, will remove it (and its content) also locally", fol);
-                    final State riverState = stateManager.getRiverState(store.getFolder(fol));
-                    riverState.setExists(false);
-                    stateManager.setRiverState(riverState);
-
-                    try {
-                        mailDestination.clearDataForFolder(fol);
-                    } catch (final Exception e) {
-                        stateManager.onError("Unable to clean data for stale folder", store.getFolder(fol), e);
+        if(deleteExpungedMessages) {
+        
+            try {
+                for (final String fol : mailDestination.getFolderNames()) {
+                    if (store.getFolder(fol).exists()) {
+                        logger.debug("{} exists for {}", fol, user);
+                    } else {
+                        logger.info("Folder {} does not exist for {} on the server, will remove it (and its content) also locally", user, fol);
+                        final State riverState = stateManager.getRiverState(store.getFolder(fol));
+                        riverState.setExists(false);
+                        stateManager.setRiverState(riverState);
+    
+                        try {
+                            mailDestination.clearDataForFolder(store.getFolder(fol));
+                        } catch (final Exception e) {
+                            stateManager.onError("Unable to clean data for stale folder for "+user, store.getFolder(fol), e);
+                        }
                     }
                 }
+            } /*catch (final IndexMissingException ime) {
+                logger.debug(ime.toString());
+                //TODO 2.0 check
+            } */ catch (final Exception e) {
+                logger.error("Error checking for stale folders", e);
             }
-        } catch (final IndexMissingException ime) {
-            logger.debug(ime.toString());
-
-        } catch (final Exception e) {
-            logger.error("Error checking for stale folders", e);
+        
         }
 
         final boolean isRoot = StringUtils.isEmpty(folderName);
@@ -519,7 +531,7 @@ public class ParallelPollingIMAPMailSource implements MailSource {
             }*/
 
             if (pattern != null && !isRoot && !pattern.matcher(folder.getFullName()).matches()) {
-                logger.info(folder.getFullName() + " does not match pattern " + pattern.toString());
+                logger.debug(folder.getFullName() + " does not match pattern " + pattern.toString());
                 return;
             }
 
@@ -549,7 +561,7 @@ public class ParallelPollingIMAPMailSource implements MailSource {
             if ((folder.getType() & Folder.HOLDS_MESSAGES) != 0) {
 
                 if (pattern != null && !pattern.matcher(folder.getFullName()).matches()) {
-                    logger.info("Pattern {} does not match {}", pattern.pattern(), folder.getFullName());
+                    logger.debug("Pattern {} does not match {}", pattern.pattern(), folder.getFullName());
                     return;
                 }
                 IMAPUtils.open(folder);

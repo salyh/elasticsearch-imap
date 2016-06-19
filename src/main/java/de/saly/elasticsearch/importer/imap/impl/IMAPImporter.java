@@ -43,7 +43,7 @@ import javax.mail.MessagingException;
 
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
@@ -59,6 +59,7 @@ import org.quartz.impl.StdSchedulerFactory;
 import de.saly.elasticsearch.importer.imap.ldap.ILoginSource;
 import de.saly.elasticsearch.importer.imap.ldap.LdapLoginSource;
 import de.saly.elasticsearch.importer.imap.maildestination.ElasticsearchBulkMailDestination;
+import de.saly.elasticsearch.importer.imap.maildestination.ElasticsearchMailDestination;
 import de.saly.elasticsearch.importer.imap.maildestination.MailDestination;
 import de.saly.elasticsearch.importer.imap.mailsource.MailSource;
 import de.saly.elasticsearch.importer.imap.mailsource.ParallelPollingIMAPMailSource;
@@ -167,14 +168,13 @@ public class IMAPImporter {
         logger.debug("mail settings " + props);
 
         for(int i=0; i<users.size();i++) {
-        
+
             String user = users.get(i);
             String password = passwords.get(i);
             
-            String _indexName = null;
+            String _indexName = indexName;
             
             if("all_in_one".equalsIgnoreCase(indexNameStrategy)) {
-                
                 _indexName = indexName;
             } else if("username".equalsIgnoreCase(indexNameStrategy)) {
                 _indexName = user;
@@ -186,6 +186,8 @@ public class IMAPImporter {
                 _indexName = indexName+"-"+user.split("@")[0];
             }
             
+            logger.info("Setup importer for user {} with {} threads and index {}", user, threads, _indexName);
+            
             StateManager riverStateManager = new ElasticsearchStateManager().client(client).index(_indexName);
             
             MailSource mailSource = null;
@@ -194,7 +196,6 @@ public class IMAPImporter {
                     .flushInterval(flushInterval).client(client).setMapping(typeMapping).setSettings(indexSettings).setType(typeName) //+user???
                     .setIndex(_indexName).setWithAttachments(withAttachments).setWithTextContent(withTextContent).setWithHtmlContent(withHtmlContent)
                     .setPreferHtmlContent(preferHtmlContent).setStripTagsFromTextContent(stripTagsFromTextContent).setHeadersToFields(headersToFields);
-
             if (props.getProperty("mail.store.protocol").toLowerCase().contains("imap")) {
                 mailSource = new ParallelPollingIMAPMailSource(props, threads, user, password).setWithFlagSync(withFlagSync);
             } else {
@@ -207,7 +208,7 @@ public class IMAPImporter {
             mailSources.add(mailSource);
             indices.add(_indexName);
         }
-        logger.info("IMAPRiver created");
+        logger.info("IMAP importer created");
     }
 
     public void close() {
@@ -237,7 +238,7 @@ public class IMAPImporter {
                     
         }
 
-        logger.info("IMAPRiver closed");
+        logger.info("IMAP importer closed");
     }
 
     public List<String> getIndexNames() {
@@ -272,7 +273,7 @@ public class IMAPImporter {
     }
 
     public void start() {
-        logger.info("Start IMAPRiver ...");
+        logger.info("Start IMAP importer ...");
 
         try {
 
@@ -326,10 +327,10 @@ public class IMAPImporter {
             }
 
             sched.start();
-            logger.info("IMAPRiver started");
+            logger.info("IMAP importer started");
 
         } catch (final Exception e) {
-            logger.error("Unable to start IMAPRiver due to " + e, e);
+            logger.error("Unable to start IMAP importer due to " + e, e);
         }
 
     }

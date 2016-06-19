@@ -28,17 +28,18 @@ package de.saly.elasticsearch.importer.imap.maildestination;
 import java.io.IOException;
 import java.util.Set;
 
+import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 
 public interface MailDestination {
 
-    public abstract void clearDataForFolder(String folderName) throws IOException, MessagingException;
+    public abstract void clearDataForFolder(Folder folder) throws IOException, MessagingException;
 
     public abstract void close();
 
     @SuppressWarnings("rawtypes")
-    public abstract Set getCurrentlyStoredMessageUids(String folderName, boolean isPop) throws IOException, MessagingException;
+    public abstract Set getCurrentlyStoredMessageUids(Folder folder) throws IOException, MessagingException;
 
     public int getFlaghashcode(String id) throws IOException, MessagingException;
 
@@ -47,7 +48,7 @@ public interface MailDestination {
     public abstract void onMessage(Message msg) throws IOException, MessagingException;
 
     @SuppressWarnings("rawtypes")
-    public abstract void onMessageDeletes(Set msgs, String folderName, boolean isPop) throws IOException, MessagingException;
+    public abstract void onMessageDeletes(Set msgs, Folder folder) throws IOException, MessagingException;
 
     public abstract ElasticsearchMailDestination startup() throws IOException;
 }

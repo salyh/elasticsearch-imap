@@ -25,11 +25,11 @@
  **********************************************************************************************************************/
 package de.saly.elasticsearch.imap;
 
-import static com.github.tlrx.elasticsearch.test.EsSetup.deleteAll;
-
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -45,12 +45,13 @@ import javax.mail.Store;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.count.CountRequest;
 import org.elasticsearch.action.count.CountResponse;
@@ -58,16 +59,19 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.ImmutableSettings.Builder;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.mapper.attachments.MapperAttachmentsPlugin;
+import org.elasticsearch.node.Node;
+import org.elasticsearch.node.NodeBuilder;
+import org.elasticsearch.node.PluginAwareNode;
 import org.elasticsearch.search.SearchHit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestName;
 
-import com.github.tlrx.elasticsearch.test.EsSetup;
+import com.google.common.collect.Lists;
 
 import de.saly.elasticsearch.importer.imap.impl.IMAPImporter;
 import de.saly.elasticsearch.importer.imap.support.IMAPUtils;
@@ -96,9 +100,9 @@ public abstract class AbstractIMAPRiverUnitTest {
 
     @Rule
     public TestName name = new TestName();
-    protected EsSetup esSetup;
-    protected EsSetup esSetup2;
-    protected EsSetup esSetup3;
+    protected Node esSetup;
+    protected Node esSetup2;
+    protected Node esSetup3;
     private IMAPImporter imapRiver;
     
     protected final ESLogger logger = ESLoggerFactory.getLogger(this.getClass().getName());
@@ -113,22 +117,24 @@ public abstract class AbstractIMAPRiverUnitTest {
     }
     
     
-    protected Builder getSettingsBuilder(boolean dataNode, boolean masterNode) {
-        Builder builder = ImmutableSettings
+    protected Settings.Builder getSettingsBuilder(boolean dataNode, boolean masterNode) {
+        
+        boolean local = true;
+        
+        Settings.Builder builder = Settings
         .settingsBuilder()
-        // .put(NODE_NAME, elasticsearchNode.name())
-        // .put("node.data", elasticsearchNode.data())
+        .put("path.home", ".")
         .put("cluster.name", "imapriver_testcluster")
-        .put("index.store.type", "memory").put("index.store.fs.memory.enabled", "true").put("gateway.type", "none")
+        .put("index.store.fs.memory.enabled", "true")
         .put("path.data", "target/data").put("path.work", "target/work").put("path.logs", "target/logs")
-        .put("path.conf", "target/config").put("path.plugins", "target/plugins").put("index.number_of_shards", "5")
+        .put("path.conf", "target/config").put("plugin.types", "org.elasticsearch.plugin.mapper.attachments.MapperAttachmentsPlugin").put("index.number_of_shards", "5")
         .put("index.number_of_replicas", "0")
         .put("node.data", dataNode)
-        .put("http.enabled", false)
-        .put("node.local", true)
+        .put("http.enabled", !local)
+        .put("node.local", local)
+        .put("http.cors.enabled", !local)
         .put("node.master", masterNode)
         .put(getProperties());
-         builder.put("node.river", "_none_");
          return builder;
     }
 
@@ -137,32 +143,15 @@ public abstract class AbstractIMAPRiverUnitTest {
 
         System.out.println("--------------------- SETUP " + name.getMethodName() + " -------------------------------------");
 
+        FileUtils.deleteQuietly(new File("target/data/"));
+        
         MockMailbox.resetAll();
 
         // Instantiates a local node & client
 
-        esSetup = new EsSetup(getSettingsBuilder(false, true).build());
-        esSetup2 = new EsSetup(getSettingsBuilder(true, false).build());
-        esSetup3 = new EsSetup(getSettingsBuilder(false, true).build());
-        // Clean all, and creates some indices
-
-        esSetup.execute(
-
-        deleteAll()
-
-        );
-        
-        esSetup2.execute(
-
-                deleteAll()
-
-                );
-        
-        esSetup3.execute(
-
-                deleteAll()
-
-                );
+        esSetup =  new PluginAwareNode(getSettingsBuilder(false, true).build(), (Collection) Lists.newArrayList(MapperAttachmentsPlugin.class)).start();
+        esSetup2 = new PluginAwareNode(getSettingsBuilder(true, false).build(), (Collection) Lists.newArrayList(MapperAttachmentsPlugin.class)).start();
+        esSetup3 = new PluginAwareNode(getSettingsBuilder(false, true).build(), (Collection) Lists.newArrayList(MapperAttachmentsPlugin.class)).start();
         
         waitForGreenClusterState(esSetup.client());
 
@@ -178,17 +167,18 @@ public abstract class AbstractIMAPRiverUnitTest {
         }
         
         if (esSetup != null) {
-            esSetup.terminate();
+            esSetup.close();
         }
         
         if (esSetup2 != null) {
-            esSetup2.terminate();
+            esSetup2.close();
         }
         
         if (esSetup3 != null) {
-            esSetup3.terminate();
+            esSetup3.close();
         }
 
+        FileUtils.deleteQuietly(new File("target/data/"));
     }
 
     protected void checkStoreForTestConnection(final Store store) {
@@ -302,17 +292,19 @@ public abstract class AbstractIMAPRiverUnitTest {
     }
     
     protected long getCount(final List<String> indices, final String type) {
-        logger.debug("getCount()");
-
+        logger.debug("getCount() for index {} and type", indices, type);
+        
         esSetup.client().admin().indices().refresh(new RefreshRequest()).actionGet();
 
         long count = 0;
         
         for (Iterator<String> iterator = indices.iterator(); iterator.hasNext();) {
             String index = (String) iterator.next();
-            count += esSetup.client().count(new CountRequest(index).types(type)).actionGet().getCount();
+             long lcount = esSetup.client().count(new CountRequest(index).types(type)).actionGet().getCount();
+             logger.debug("Count for index {} (type {}) is {}", index, type, lcount);
+             count += lcount;
         }
-                
+
         return count;
     }
 

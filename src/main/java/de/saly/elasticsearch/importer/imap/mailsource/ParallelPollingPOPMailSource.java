@@ -48,7 +48,6 @@ import javax.mail.Store;
 
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.elasticsearch.indices.IndexMissingException;
 
 import com.sun.mail.pop3.POP3Folder;
 
@@ -271,14 +270,15 @@ public class ParallelPollingPOPMailSource implements MailSource {
         int highestMsgNum = 1;
         Set localMailSet = new HashSet();
         try {
-            localMailSet = new HashSet(mailDestination.getCurrentlyStoredMessageUids(folder.getFullName(), true)); // will
+            localMailSet = new HashSet(mailDestination.getCurrentlyStoredMessageUids(folder)); // will
                                                                                                                    // not
                                                                                                                    // change
                                                                                                                    // during
                                                                                                                    // this
                                                                                                                    // method
-        } catch (final IndexMissingException ime) {
-            logger.debug(ime.toString());
+        } catch (final Exception ime) {
+            logger.error(ime.toString(), ime);
+            //TODO 2.0 check //was IndexMissingException
 
         }
 
@@ -353,7 +353,7 @@ public class ParallelPollingPOPMailSource implements MailSource {
     
             logger.info(localMailSet.size() + " messages were locally deleted, because they are expunged on server.");
     
-            mailDestination.onMessageDeletes(localMailSet, folder.getFullName(), true);
+            mailDestination.onMessageDeletes(localMailSet, folder);
         }
 
     }
@@ -398,7 +398,7 @@ public class ParallelPollingPOPMailSource implements MailSource {
             if ((folder.getType() & Folder.HOLDS_MESSAGES) != 0) {
 
                 if (pattern != null && !pattern.matcher(folder.getFullName()).matches()) {
-                    logger.trace("Pattern {} does not match {}", pattern.pattern(), folder.getFullName());
+                    logger.debug("Pattern {} does not match {}", pattern.pattern(), folder.getFullName());
                     return;
                 }
                 IMAPUtils.open(folder);

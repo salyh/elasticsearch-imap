@@ -23,6 +23,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import de.saly.elasticsearch.importer.imap.support.IMAPUtils;
@@ -96,13 +97,13 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 		//BASE64 content httpclient-tutorial.pdf
 		Assert.assertTrue(searchResponse.getHits().hits()[0].getSourceAsString().contains(AttachmentMapperTest.PDF_BASE64_DETECTION));
 
-		searchResponse =  esSetup.client().prepareSearch("imapriverdata").addFields("*").setTypes("mail").setQuery(QueryBuilders.matchPhraseQuery("attachments.content", PDF_CONTENT_TO_SEARCH)).execute().actionGet();
+		searchResponse =  esSetup.client().prepareSearch("imapriverdata").addFields("*").setTypes("mail").setQuery(QueryBuilders.matchPhraseQuery("attachments.content.content", PDF_CONTENT_TO_SEARCH)).execute().actionGet();
 		Assert.assertEquals(1, searchResponse.getHits().totalHits());
 
-		Assert.assertEquals(1, searchResponse.getHits().hits()[0].field("attachments.content").getValues().size());
+		Assert.assertEquals(1, searchResponse.getHits().hits()[0].field("attachments.content.content").getValues().size());
 		Assert.assertEquals("HttpClient Tutorial", searchResponse.getHits().hits()[0].field("attachments.content.title").getValue().toString());
 		Assert.assertEquals("application/pdf", searchResponse.getHits().hits()[0].field("attachments.content.content_type").getValue().toString());
-		Assert.assertTrue(searchResponse.getHits().hits()[0].field("attachments.content").getValue().toString().contains(PDF_CONTENT_TO_SEARCH));
+		Assert.assertTrue(searchResponse.getHits().hits()[0].field("attachments.content.content").getValue().toString().contains(PDF_CONTENT_TO_SEARCH));
 
 	}
 	
@@ -178,17 +179,17 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 
 		searchResponse =  esSetup.client().prepareSearch("imapriverdata").addFields("*").setTypes("mail").get();//.setQuery(QueryBuilders.matchPhraseQuery("attachments.content", PDF_CONTENT_TO_SEARCH)).execute().actionGet();
 		Assert.assertEquals(1, searchResponse.getHits().totalHits());
-		Assert.assertEquals(2, searchResponse.getHits().hits()[0].field("attachments.content").getValues().size());
+		Assert.assertEquals(2, searchResponse.getHits().hits()[0].field("attachments.content.content").getValues().size());
 
 		//first value is httpclient-tutorial.pdf
-		Assert.assertTrue(searchResponse.getHits().hits()[0].field("attachments.content").getValue().toString().contains(PDF_CONTENT_TO_SEARCH));
+		Assert.assertTrue(searchResponse.getHits().hits()[0].field("attachments.content.content").getValue().toString().contains(PDF_CONTENT_TO_SEARCH));
 
-		searchResponse =  esSetup.client().prepareSearch("imapriverdata").addFields("attachments.content").setTypes("mail").setQuery(QueryBuilders.matchQuery("attachments.content", WORD_CONTENT_TO_SEARCH)).execute().actionGet();
+		searchResponse =  esSetup.client().prepareSearch("imapriverdata").addFields("attachments.content.content").setTypes("mail").setQuery(QueryBuilders.matchQuery("attachments.content.content", WORD_CONTENT_TO_SEARCH)).execute().actionGet();
 		Assert.assertEquals(1, searchResponse.getHits().totalHits());
-		Assert.assertEquals(2, searchResponse.getHits().hits()[0].field("attachments.content").getValues().size());
+		Assert.assertEquals(2, searchResponse.getHits().hits()[0].field("attachments.content.content").getValues().size());
 
 		//second value is testWORD.docx
-		Assert.assertTrue(searchResponse.getHits().hits()[0].field("attachments.content").getValues().get(1).toString().contains(WORD_CONTENT_TO_SEARCH));
+		Assert.assertTrue(searchResponse.getHits().hits()[0].field("attachments.content.content").getValues().get(1).toString().contains(WORD_CONTENT_TO_SEARCH));
 
 	}
 
@@ -262,19 +263,19 @@ public class AttachmentMapperTest extends AbstractIMAPRiverUnitTest{
 		//BASE64 content testWORD.docx
 		Assert.assertTrue(searchResponse.getHits().hits()[0].getSourceAsString().contains(AttachmentMapperTest.WORD_BASE64_DETECTION));
 
-		searchResponse =  esSetup.client().prepareSearch("imapriverdata").addFields("attachments.content").setTypes("mail").setQuery(QueryBuilders.matchQuery("attachments.content", PDF_CONTENT_TO_SEARCH)).execute().actionGet();
+		searchResponse =  esSetup.client().prepareSearch("imapriverdata").addFields("attachments.content.content").setTypes("mail").setQuery(QueryBuilders.matchQuery("attachments.content.content", PDF_CONTENT_TO_SEARCH)).execute().actionGet();
 		Assert.assertEquals(1, searchResponse.getHits().totalHits());
-		Assert.assertEquals(2, searchResponse.getHits().hits()[0].field("attachments.content").getValues().size());
+		Assert.assertEquals(2, searchResponse.getHits().hits()[0].field("attachments.content.content").getValues().size());
 
 		//first value is httpclient-tutorial.pdf
-		Assert.assertTrue(searchResponse.getHits().hits()[0].field("attachments.content").getValue().toString().contains(PDF_CONTENT_TO_SEARCH));
+		Assert.assertTrue(searchResponse.getHits().hits()[0].field("attachments.content.content").getValue().toString().contains(PDF_CONTENT_TO_SEARCH));
 
-		searchResponse =  esSetup.client().prepareSearch("imapriverdata").addFields("attachments.content").setTypes("mail").setQuery(QueryBuilders.matchQuery("attachments.content", WORD_CONTENT_TO_SEARCH)).execute().actionGet();
+		searchResponse =  esSetup.client().prepareSearch("imapriverdata").addFields("attachments.content.content").setTypes("mail").setQuery(QueryBuilders.matchQuery("attachments.content.content", WORD_CONTENT_TO_SEARCH)).execute().actionGet();
 		Assert.assertEquals(1, searchResponse.getHits().totalHits());
-		Assert.assertEquals(2, searchResponse.getHits().hits()[0].field("attachments.content").getValues().size());
+		Assert.assertEquals(2, searchResponse.getHits().hits()[0].field("attachments.content.content").getValues().size());
 
 		//second value is testWORD.docx
-		Assert.assertTrue(searchResponse.getHits().hits()[0].field("attachments.content").getValues().get(1).toString().contains(WORD_CONTENT_TO_SEARCH));
+		Assert.assertTrue(searchResponse.getHits().hits()[0].field("attachments.content.content").getValues().get(1).toString().contains(WORD_CONTENT_TO_SEARCH));
 
 	}
 

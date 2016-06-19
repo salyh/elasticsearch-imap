@@ -27,6 +27,8 @@ package de.saly.elasticsearch.importer.imap.support;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -323,7 +325,7 @@ public class IndexableMailMessage {
 
     private String mailboxType;
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final static ObjectMapper mapper = new ObjectMapper();
 
     private String popId;
 
@@ -343,9 +345,14 @@ public class IndexableMailMessage {
 
     private long uid;
 
-    public IndexableMailMessage() {
+    static {
         mapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
         mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(SerializationConfig.Feature.WRITE_DATES_AS_TIMESTAMPS, false);
+        mapper.setDateFormat(new SimpleDateFormat("yyyyMMdd'T'HHmmss.SSSZ")); //TODO THREAD safe?
+    }
+    
+    public IndexableMailMessage() {
 
     }
 
