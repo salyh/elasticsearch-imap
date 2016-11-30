@@ -1,11 +1,9 @@
 package org.elasticsearch.node;
 
-import java.util.ArrayList;
 import java.util.Collection;
 
 import org.elasticsearch.Version;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.mapper.attachments.MapperAttachmentsPlugin;
 import org.elasticsearch.node.internal.InternalSettingsPreparer;
 import org.elasticsearch.plugins.Plugin;
 

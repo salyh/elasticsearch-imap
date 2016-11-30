@@ -25,8 +25,6 @@
  **********************************************************************************************************************/
 package de.saly.elasticsearch.importer.imap;
 
-import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
-
 import java.io.File;
 import java.net.InetAddress;
 import java.util.Collection;
@@ -41,7 +39,6 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.mapper.attachments.MapperAttachmentsPlugin;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.PluginAwareNode;
-import org.elasticsearch.plugins.Plugin;
 
 import com.google.common.collect.Lists;
 

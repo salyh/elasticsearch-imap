@@ -41,7 +41,7 @@ import java.util.regex.PatternSyntaxException;
 
 import javax.mail.MessagingException;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.client.Client;
@@ -59,7 +59,6 @@ import org.quartz.impl.StdSchedulerFactory;
 import de.saly.elasticsearch.importer.imap.ldap.ILoginSource;
 import de.saly.elasticsearch.importer.imap.ldap.LdapLoginSource;
 import de.saly.elasticsearch.importer.imap.maildestination.ElasticsearchBulkMailDestination;
-import de.saly.elasticsearch.importer.imap.maildestination.ElasticsearchMailDestination;
 import de.saly.elasticsearch.importer.imap.maildestination.MailDestination;
 import de.saly.elasticsearch.importer.imap.mailsource.MailSource;
 import de.saly.elasticsearch.importer.imap.mailsource.ParallelPollingIMAPMailSource;
