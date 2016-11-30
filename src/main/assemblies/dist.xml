@@ -19,7 +19,7 @@
                 <include>org.apache.lucene</include>
                 <include>org.quartz-scheduler</include>
                 <include>commons-io</include>
-                <include>commons-lang</include>
+                <include>org.apache.commons:commons-lang3</include>
                 <include>com.sun.mail</include>
                 <include>com.beetstra.jutf7</include>
                 <include>com.spatial4j:spatial4j</include>
