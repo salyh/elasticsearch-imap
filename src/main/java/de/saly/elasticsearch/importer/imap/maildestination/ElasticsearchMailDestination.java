@@ -189,11 +189,11 @@ public class ElasticsearchMailDestination implements MailDestination {
 
         final GetField flaghashcodeField = getResponse.getField("flaghashcode");
 
-        if (flaghashcodeField == null || flaghashcodeField.getValue() == null || !(flaghashcodeField.getValue() instanceof Integer)) {
-            throw new IOException("No flaghashcode field for id " + id);
+        if (flaghashcodeField == null || flaghashcodeField.getValue() == null || !(flaghashcodeField.getValue() instanceof Number)) {
+            throw new IOException("No flaghashcode field for id " + id+ " ("+(flaghashcodeField==null?"null":"Val: "+flaghashcodeField.getValue())+")");
         }
 
-        return ((Integer) flaghashcodeField.getValue()).intValue();
+        return ((Number) flaghashcodeField.getValue()).intValue();
 
     }
 
