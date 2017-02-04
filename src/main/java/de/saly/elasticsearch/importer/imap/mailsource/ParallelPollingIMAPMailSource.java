@@ -455,7 +455,9 @@ public class ParallelPollingIMAPMailSource implements MailSource {
                 localMailSet.removeAll(serverMailSet);
                 // localMailSet has now the ones that are not on server             
     
-                logger.info(localMailSet.size() + " messages were locally deleted, because they are expunged on server.");
+                if (localMailSet.size() > 0) {
+                    logger.info(localMailSet.size() + " messages were locally deleted, because they are expunged on server.");
+                }
     
                 mailDestination.onMessageDeletes(localMailSet, folder);
             
