@@ -1,7 +1,7 @@
 elasticsearch-importer-imap  Elasticsearch 2.x
 ==============================================
 
-Support Elasticsearch 5.0 readyness and keep elasticsearch security plugin free. Currently IMAP importer is only working with Elasticsearch 2 and it costs a lot of time and effort to update and maintain it for Elasticsearch 5. Donations welcome!
+Support Elasticsearch 5.0 readyness and keep elasticsearch imap importer free. Currently IMAP importer is only working with Elasticsearch 2 and it costs a lot of time and effort to update and maintain it for Elasticsearch 5. Donations welcome!
 
 Pledgie:<br />
 <a href='https://pledgie.com/campaigns/32955'><img alt='Click here to lend your support to: Elasticsearch IMAP Importer and make a donation at pledgie.com !' src='https://pledgie.com/campaigns/32955.png?skin_name=chrome' border='0' ></a>
