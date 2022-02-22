@@ -249,6 +249,7 @@
 					<includes>
 						<include>**/*Test*.java</include>
 					</includes>
+					<forkCount>1.5C</forkCount>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -407,6 +408,7 @@
 							<excludes>
 								<exclude>**/*Integration*.java</exclude>
 							</excludes>
+					<forkCount>1.5C</forkCount>
 						</configuration>
 					</plugin>
 				</plugins>
